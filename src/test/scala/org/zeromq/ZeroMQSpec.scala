@@ -16,12 +16,13 @@ class ZeroMQSpec extends WordSpec with MustMatchers with BeforeAndAfter {
     var endpoint: String = null
     before {
       zmq = ZeroMQ.loadLibrary
-      endpoint = "tcp://127.0.0.1:" + randomPort
+      endpoint = "inproc://zeromq-spec"
     }
     "zmq_bind" in {
       val context = zmq.zmq_init(1)
       val socket = zmq.zmq_socket(context, ZMQ_PUB)
       zmq.zmq_bind(socket, endpoint) must equal(0)
+      zmq.zmq_close(socket)
     }
     "zmq_close" in { 
       val context = zmq.zmq_init(1)
@@ -30,25 +31,23 @@ class ZeroMQSpec extends WordSpec with MustMatchers with BeforeAndAfter {
     }
     "zmq_connect" in {
       val context = zmq.zmq_init(1)
-      val (pub, sub) = (
-        zmq.zmq_socket(context, ZMQ_PUB), 
-        zmq.zmq_socket(context, ZMQ_SUB)
-      )
+      val (pub, sub) = (zmq.zmq_socket(context, ZMQ_PUB), zmq.zmq_socket(context, ZMQ_SUB))
       zmq.zmq_bind(pub, endpoint)
       zmq.zmq_connect(sub, endpoint) must equal(0)
+      zmq.zmq_close(sub)
+      zmq.zmq_close(pub)
     }
     "zmq_device" in {
       val context = zmq.zmq_init(1)
-      val (frontend, backend) = (
-        zmq.zmq_socket(context, ZMQ_DEALER), 
-        zmq.zmq_socket(context, ZMQ_ROUTER)
-      )
+      val (frontend, backend) = (zmq.zmq_socket(context, ZMQ_DEALER), zmq.zmq_socket(context, ZMQ_ROUTER))
       zmq.zmq_bind(frontend, "tcp://127.0.0.1:" + randomPort)
       zmq.zmq_bind(backend, "tcp://127.0.0.1:" + randomPort)
       val executor = Executors.newSingleThreadScheduledExecutor
       executor.schedule(new Runnable { def run { zmq.zmq_term(context) } }, 1, TimeUnit.SECONDS)
       zmq.zmq_device(ZMQ_QUEUE, frontend, backend) must equal(-1)
       zmq.zmq_errno must equal(ZeroMQ.ETERM)
+      zmq.zmq_close(frontend)
+      zmq.zmq_close(backend)
     }
     "zmq_errno" in { 
       zmq.zmq_init(-1)
@@ -63,6 +62,7 @@ class ZeroMQSpec extends WordSpec with MustMatchers with BeforeAndAfter {
       zmq.zmq_setsockopt(socket, ZMQ_HWM, value, length) must equal(0)
       zmq.zmq_getsockopt(socket, ZMQ_HWM, value, lengthRef) must equal(0)
       value.getInt(offset) must equal(optionValue)
+      zmq.zmq_close(socket)
     }
     "zmq_init" in { 
       val context = zmq.zmq_init(1)
@@ -106,13 +106,27 @@ class ZeroMQSpec extends WordSpec with MustMatchers with BeforeAndAfter {
     "zmq_msg_move" in { 
       val (dst, src) = (new zmq_msg_t, new zmq_msg_t)
       zmq.zmq_msg_init_data(src, dataMemory, new NativeLong(dataBytes.length), null, null)
+      zmq.zmq_msg_init(dst)
       zmq.zmq_msg_move(dst, src) must equal(0)
       zmq.zmq_msg_close(dst)
       zmq.zmq_msg_close(src)
     }
     "zmq_poll" ignore { }
-    "zmq_recv" ignore { }
-    "zmq_send" ignore { }
+    "zmq_(send|recv)" in { 
+      val context = zmq.zmq_init(1)
+      val (pub, sub) = (zmq.zmq_socket(context, ZMQ_PUB), zmq.zmq_socket(context, ZMQ_SUB))
+      zmq.zmq_bind(pub, endpoint)
+      zmq.zmq_connect(sub, endpoint)
+      zmq.zmq_setsockopt(sub, ZMQ_SUBSCRIBE, Pointer.NULL, new NativeLong(0))
+      val (outgoingMsg, incomingMsg) = (new zmq_msg_t, new zmq_msg_t)
+      zmq.zmq_msg_init_data(outgoingMsg, dataMemory, new NativeLong(dataBytes.length), null, null)
+      zmq.zmq_msg_init(incomingMsg)
+      zmq.zmq_send(pub, outgoingMsg, 0) must equal(0)
+      zmq.zmq_recv(sub, incomingMsg, 0) must equal(0)
+      zmq.zmq_msg_close(outgoingMsg)
+      zmq.zmq_close(sub)
+      zmq.zmq_close(pub)
+    }
     "zmq_socket" in { 
       val context = zmq.zmq_init(1)
       val socket = zmq.zmq_socket(context, ZMQ_PUB)

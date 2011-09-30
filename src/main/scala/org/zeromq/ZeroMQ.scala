@@ -68,7 +68,6 @@ trait ZeroMQ extends Library {
   def zmq_errno: Int
   def zmq_getsockopt(socket: Pointer, option_name: Int, option_value: Pointer, option_len: LongByReference): Int
   def zmq_init(io_threads: Int): Pointer
-  def zmq_setsockopt(socket: Pointer, option_name: Int, option_value: Pointer, option_len: NativeLong): Int
   def zmq_msg_init(msg: zmq_msg_t): Int
   def zmq_msg_close(msg: zmq_msg_t): Int
   def zmq_msg_copy(dest: zmq_msg_t, src: zmq_msg_t): Int
@@ -76,6 +75,9 @@ trait ZeroMQ extends Library {
   def zmq_msg_init_data(msg: zmq_msg_t, data: Pointer, size: NativeLong, ffn: zmq_free_fn, hint: Pointer): Int
   def zmq_msg_init_size(msg: zmq_msg_t, size: NativeLong): Int
   def zmq_msg_move(dest: zmq_msg_t, src: zmq_msg_t): Int
+  def zmq_recv(socket: Pointer, msg: zmq_msg_t, flags: Int): Int
+  def zmq_send(socket: Pointer, msg: zmq_msg_t, flags: Int): Int
+  def zmq_setsockopt(socket: Pointer, option_name: Int, option_value: Pointer, option_len: NativeLong): Int
   def zmq_socket(context: Pointer, socket_type: Int): Pointer
   def zmq_strerror(errnum: Int): String
   def zmq_term(context: Pointer): Int
