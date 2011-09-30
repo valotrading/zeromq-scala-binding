@@ -40,14 +40,21 @@ object ZeroMQ {
   val ZMQ_STREAMER = 1
   val ZMQ_FORWARDER = 2
   val ZMQ_QUEUE = 3
-  /* Unix errors */
+  /** Unix errors */
   val EINVAL = 22
   /** ZMQ errors */
   val ZMQ_HAUSNUMERO = 156384712
   val EFSM = ZMQ_HAUSNUMERO + 51
   val ENOCOMPATPROTO = ZMQ_HAUSNUMERO + 52
   val ETERM = ZMQ_HAUSNUMERO + 53
-
+  /** ZMQ message definition */
+  val ZMQ_MAX_VSM_SIZE = 30
+  val ZMQ_DELIMITER = 31
+  val ZMQ_VSM = 32
+  val ZMQ_MSG_MORE = 1
+  val ZMQ_MSG_SHARED = 128
+  val ZMQ_MSG_MASK = 129
+  /** Helper for loading the ZeroMQ library */
   def loadLibrary: ZeroMQ = {
     Native.loadLibrary("zmq", classOf[ZeroMQ]).asInstanceOf[ZeroMQ]  
   }
