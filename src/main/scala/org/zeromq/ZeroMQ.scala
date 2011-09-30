@@ -75,6 +75,7 @@ trait ZeroMQ extends Library {
   def zmq_msg_data(msg: zmq_msg_t): Pointer
   def zmq_msg_init_data(msg: zmq_msg_t, data: Pointer, size: NativeLong, ffn: zmq_free_fn, hint: Pointer): Int
   def zmq_msg_init_size(msg: zmq_msg_t, size: NativeLong): Int
+  def zmq_msg_move(dest: zmq_msg_t, src: zmq_msg_t): Int
   def zmq_socket(context: Pointer, socket_type: Int): Pointer
   def zmq_strerror(errnum: Int): String
   def zmq_term(context: Pointer): Int

@@ -94,7 +94,11 @@ class ZeroMQSpec extends WordSpec with MustMatchers with BeforeAndAfter {
     "zmq_msg_init" in {
       zmq.zmq_msg_init(new zmq_msg_t) must equal(0)
     }
-    "zmq_msg_move" ignore { }
+    "zmq_msg_move" in { 
+      val (dst, src) = (new zmq_msg_t, new zmq_msg_t)
+      zmq.zmq_msg_init_data(src, dataMemory, new NativeLong(dataBytes.length), null, null)
+      zmq.zmq_msg_move(dst, src) must equal(0)
+    }
     "zmq_poll" ignore { }
     "zmq_recv" ignore { }
     "zmq_send" ignore { }
