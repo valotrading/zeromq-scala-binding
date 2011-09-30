@@ -54,14 +54,14 @@ class ZeroMQSpec extends WordSpec with MustMatchers with BeforeAndAfter {
       zmq.zmq_init(-1)
       zmq.zmq_errno must equal (EINVAL)
     }
-    "zmq_getsockopt / zmq_setsockopt" in {
+    "zmq_(get|set)sockopt" in {
       val context = zmq.zmq_init(1)
       val socket = zmq.zmq_socket(context, ZMQ_PUB)
       val (offset, sizeInBytes, optionValue) = (0, 8, 1234)
       val value = new Memory(sizeInBytes) { setInt(offset, optionValue) }
       val (length, lengthRef) = (new NativeLong(sizeInBytes), new LongByReference(sizeInBytes))
-      zmq.zmq_setsockopt(socket, ZMQ_RECOVERY_IVL, value, length) must equal(0)
-      zmq.zmq_getsockopt(socket, ZMQ_RECOVERY_IVL, value, lengthRef) must equal(0)
+      zmq.zmq_setsockopt(socket, ZMQ_HWM, value, length) must equal(0)
+      zmq.zmq_getsockopt(socket, ZMQ_HWM, value, lengthRef) must equal(0)
       value.getInt(offset) must equal(optionValue)
     }
     "zmq_init" in { 
