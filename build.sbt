@@ -8,7 +8,7 @@ version := "0.0.1-SNAPSHOT"
 
 libraryDependencies += "net.java.dev.jna" % "jna" % "3.0.9"
 
-libraryDependencies += "org.scalatest" % "scalatest_2.9.0" % "1.6.1" % "test"                                                                             
+libraryDependencies += "org.scalatest" %% "scalatest" % "1.6.1" % "test"
 
 scalacOptions := Seq("-deprecation", "-unchecked")
 
