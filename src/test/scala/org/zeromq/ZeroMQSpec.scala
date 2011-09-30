@@ -68,11 +68,29 @@ class ZeroMQSpec extends WordSpec with MustMatchers with BeforeAndAfter {
       val context = zmq.zmq_init(1)
       context must not be (null)
     }
-    "zmq_msg_close" ignore { }
-    "zmq_msg_copy" ignore { }
-    "zmq_msg_data" ignore { }
-    "zmq_msg_init_data" ignore { }
-    "zmq_msg_init_size" ignore { }
+    "zmq_msg_close" in {
+      val msg = new zmq_msg_t
+      zmq.zmq_msg_init(msg)
+      zmq.zmq_msg_close(msg) must equal(0)
+    }
+    "zmq_msg_copy" in {
+      val (dst, src) = (new zmq_msg_t, new zmq_msg_t)
+      zmq.zmq_msg_init_data(src, dataMemory, new NativeLong(dataBytes.length), null, null)
+      zmq.zmq_msg_init_size(dst, new NativeLong(dataBytes.length)) must equal(0)
+      zmq.zmq_msg_copy(dst, src) must equal(0)
+    }
+    "zmq_msg_data" in { 
+      val msg = new zmq_msg_t
+      zmq.zmq_msg_init(msg)
+      zmq.zmq_msg_init_data(msg, dataMemory, new NativeLong(dataBytes.length), null, null)
+      zmq.zmq_msg_data(msg).getByteArray(0, dataBytes.length) must equal(dataBytes)
+    }
+    "zmq_msg_init_data" in { 
+      zmq.zmq_msg_init_data(new zmq_msg_t, dataMemory, new NativeLong(dataBytes.length), null, null) must equal(0)
+    }
+    "zmq_msg_init_size" in { 
+      zmq.zmq_msg_init_size(new zmq_msg_t, new NativeLong(dataBytes.length)) must equal(0)
+    }
     "zmq_msg_init" in {
       zmq.zmq_msg_init(new zmq_msg_t) must equal(0)
     }
@@ -102,4 +120,6 @@ class ZeroMQSpec extends WordSpec with MustMatchers with BeforeAndAfter {
     }
   }
   def randomPort = 1024 + new Random(System.currentTimeMillis).nextInt(4096)
+  lazy val dataBytes = "hello world".getBytes
+  lazy val dataMemory = new Memory(dataBytes.length) { write(0, dataBytes, 0, dataBytes.length) }
 }
