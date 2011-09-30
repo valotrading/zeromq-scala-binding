@@ -69,6 +69,7 @@ trait ZeroMQ extends Library {
   def zmq_getsockopt(socket: Pointer, option_name: Int, option_value: Pointer, option_len: LongByReference): Int
   def zmq_init(io_threads: Int): Pointer
   def zmq_setsockopt(socket: Pointer, option_name: Int, option_value: Pointer, option_len: NativeLong): Int
+  def zmq_msg_init(msg: zmq_msg_t): Int
   def zmq_socket(context: Pointer, socket_type: Int): Pointer
   def zmq_strerror(errnum: Int): String
   def zmq_term(context: Pointer): Int
