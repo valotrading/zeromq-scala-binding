@@ -54,6 +54,10 @@ object ZeroMQ {
   val ZMQ_MSG_MORE = 1
   val ZMQ_MSG_SHARED = 128
   val ZMQ_MSG_MASK = 129
+  /** IO multiplexing */
+  val ZMQ_POLLIN: Short = 1
+  val ZMQ_POLLOUT: Short = 2
+  val ZMQ_POLLERR: Short = 4 
   /** Helper for loading the ZeroMQ library */
   def loadLibrary: ZeroMQ = {
     Native.loadLibrary("zmq", classOf[ZeroMQ]).asInstanceOf[ZeroMQ]  
@@ -75,6 +79,7 @@ trait ZeroMQ extends Library {
   def zmq_msg_init_data(msg: zmq_msg_t, data: Pointer, size: NativeLong, ffn: zmq_free_fn, hint: Pointer): Int
   def zmq_msg_init_size(msg: zmq_msg_t, size: NativeLong): Int
   def zmq_msg_move(dest: zmq_msg_t, src: zmq_msg_t): Int
+  def zmq_poll(items: Array[zmq_pollitem_t], nitems: Int, timeout: NativeLong): Int
   def zmq_recv(socket: Pointer, msg: zmq_msg_t, flags: Int): Int
   def zmq_send(socket: Pointer, msg: zmq_msg_t, flags: Int): Int
   def zmq_setsockopt(socket: Pointer, option_name: Int, option_value: Pointer, option_len: NativeLong): Int

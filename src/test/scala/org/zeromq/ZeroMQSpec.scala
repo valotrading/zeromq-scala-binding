@@ -111,8 +111,7 @@ class ZeroMQSpec extends WordSpec with MustMatchers with BeforeAndAfter {
       zmq.zmq_msg_close(dst)
       zmq.zmq_msg_close(src)
     }
-    "zmq_poll" ignore { }
-    "zmq_(send|recv)" in { 
+    "zmq_(poll|send|recv)" in { 
       val context = zmq.zmq_init(1)
       val (pub, sub) = (zmq.zmq_socket(context, ZMQ_PUB), zmq.zmq_socket(context, ZMQ_SUB))
       zmq.zmq_bind(pub, endpoint)
@@ -122,6 +121,11 @@ class ZeroMQSpec extends WordSpec with MustMatchers with BeforeAndAfter {
       zmq.zmq_msg_init_data(outgoingMsg, dataMemory, new NativeLong(dataBytes.length), null, null)
       zmq.zmq_msg_init(incomingMsg)
       zmq.zmq_send(pub, outgoingMsg, 0) must equal(0)
+      val items = new Array[zmq_pollitem_t](1)
+      items(0) = new zmq_pollitem_t
+      items(0).socket = sub
+      items(0).events = ZMQ_POLLIN
+      zmq.zmq_poll(items, 1, new NativeLong(-1)) must equal (1)
       zmq.zmq_recv(sub, incomingMsg, 0) must equal(0)
       zmq.zmq_msg_close(outgoingMsg)
       zmq.zmq_close(sub)
