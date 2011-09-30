@@ -78,26 +78,37 @@ class ZeroMQSpec extends WordSpec with MustMatchers with BeforeAndAfter {
       zmq.zmq_msg_init_data(src, dataMemory, new NativeLong(dataBytes.length), null, null)
       zmq.zmq_msg_init_size(dst, new NativeLong(dataBytes.length)) must equal(0)
       zmq.zmq_msg_copy(dst, src) must equal(0)
+      zmq.zmq_msg_close(dst)
+      zmq.zmq_msg_close(src)
     }
     "zmq_msg_data" in { 
       val msg = new zmq_msg_t
       zmq.zmq_msg_init(msg)
       zmq.zmq_msg_init_data(msg, dataMemory, new NativeLong(dataBytes.length), null, null)
       zmq.zmq_msg_data(msg).getByteArray(0, dataBytes.length) must equal(dataBytes)
+      zmq.zmq_msg_close(msg)
     }
     "zmq_msg_init_data" in { 
-      zmq.zmq_msg_init_data(new zmq_msg_t, dataMemory, new NativeLong(dataBytes.length), null, null) must equal(0)
+      val msg = new zmq_msg_t
+      zmq.zmq_msg_init_data(msg, dataMemory, new NativeLong(dataBytes.length), null, null) must equal(0)
+      zmq.zmq_msg_close(msg)
     }
     "zmq_msg_init_size" in { 
-      zmq.zmq_msg_init_size(new zmq_msg_t, new NativeLong(dataBytes.length)) must equal(0)
+      val msg = new zmq_msg_t
+      zmq.zmq_msg_init_size(msg, new NativeLong(dataBytes.length)) must equal(0)
+      zmq.zmq_msg_close(msg)
     }
     "zmq_msg_init" in {
-      zmq.zmq_msg_init(new zmq_msg_t) must equal(0)
+      val msg = new zmq_msg_t
+      zmq.zmq_msg_init(msg) must equal(0)
+      zmq.zmq_msg_close(msg)
     }
     "zmq_msg_move" in { 
       val (dst, src) = (new zmq_msg_t, new zmq_msg_t)
       zmq.zmq_msg_init_data(src, dataMemory, new NativeLong(dataBytes.length), null, null)
       zmq.zmq_msg_move(dst, src) must equal(0)
+      zmq.zmq_msg_close(dst)
+      zmq.zmq_msg_close(src)
     }
     "zmq_poll" ignore { }
     "zmq_recv" ignore { }
