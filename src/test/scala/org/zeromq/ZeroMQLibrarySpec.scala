@@ -25,9 +25,9 @@ import scala.util.Random
 import com.sun.jna._
 import com.sun.jna.ptr._
 
-class ZeroMQSpec extends WordSpec with MustMatchers with BeforeAndAfter {
+class ZeroMQLibrarySpec extends WordSpec with MustMatchers with BeforeAndAfter {
   "ZeroMQ" must {
-    var zmq: ZeroMQ = null
+    var zmq: ZeroMQLibrary = null
     var endpoint: String = null
     before {
       zmq = ZeroMQ.loadLibrary

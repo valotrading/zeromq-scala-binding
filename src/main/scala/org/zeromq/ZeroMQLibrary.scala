@@ -74,12 +74,12 @@ object ZeroMQ {
   val ZMQ_POLLOUT: Short = 2
   val ZMQ_POLLERR: Short = 4 
   /** Helper for loading the ZeroMQ library */
-  def loadLibrary: ZeroMQ = {
-    Native.loadLibrary("zmq", classOf[ZeroMQ]).asInstanceOf[ZeroMQ]  
+  def loadLibrary: ZeroMQLibrary = {
+    Native.loadLibrary("zmq", classOf[ZeroMQLibrary]).asInstanceOf[ZeroMQLibrary]  
   }
 }
 
-trait ZeroMQ extends Library {
+trait ZeroMQLibrary extends Library {
   def zmq_bind(socket: Pointer, endpoint: String): Int
   def zmq_close(socket: Pointer): Int
   def zmq_connect(scoket: Pointer, endpoint: String): Int
