@@ -51,6 +51,12 @@ object ZeroMQ {
   val ZMQ_RECONNECT_IVL = 18
   val ZMQ_BACKLOG = 19
   val ZMQ_RECONNECT_IVL_MAX = 21
+  val ZMQ_MAXMSGSIZE = 22;
+  val ZMQ_SNDHWM = 23;
+  val ZMQ_RCVHWM = 24;
+  val ZMQ_MULTICAST_HOPS = 25;
+  val ZMQ_RCVTIMEO = 27;
+  val ZMQ_SNDTIMEO = 28;
   /** Built-in devices */
   val ZMQ_STREAMER = 1
   val ZMQ_FORWARDER = 2
