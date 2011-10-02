@@ -2,7 +2,7 @@ sbtPlugin := true
 
 organization := "org.zeromq"
 
-name := "zeromq-scala-bindings"
+name := "zeromq-scala-binding"
 
 version := "0.0.1-SNAPSHOT"
 
@@ -12,4 +12,4 @@ libraryDependencies += "org.scalatest" %% "scalatest" % "1.6.1" % "test"
 
 scalacOptions := Seq("-deprecation", "-unchecked")
 
-publishTo := Some(Resolver.file("Github Pages", file("../zeromq-scala-bindings-gh-pages/maven/")))
+publishTo := Some(Resolver.file("GitHub Pages", file("../zeromq-scala-binding-gh-pages/maven/")))
