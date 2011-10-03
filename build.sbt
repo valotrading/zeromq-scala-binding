@@ -13,3 +13,5 @@ libraryDependencies += "org.scalatest" %% "scalatest" % "1.6.1" % "test"
 scalacOptions := Seq("-deprecation", "-unchecked")
 
 publishTo := Some(Resolver.file("GitHub Pages", file("../zeromq-scala-binding-gh-pages/maven/")))
+
+publishArtifact in (Compile, packageDoc) := false 
