@@ -63,6 +63,7 @@ object ZeroMQ {
   val ZMQ_QUEUE = 3
   /** Unix errors */
   val EINVAL = 22
+  val EAGAIN = 11
   /** ZMQ errors */
   val ZMQ_HAUSNUMERO = 156384712
   val EFSM = ZMQ_HAUSNUMERO + 51
