@@ -10,7 +10,7 @@ Create a file, <code>project/plugins/build.sbt</code>, for plugin library depend
 <code>
   resolvers += "zeromq-scala-binding-repo" at "http://kro.github.com/zeromq-scala-binding/maven"
 
-  libraryDependencies += "org.zeromq" %% "zeromq-scala-binding" % "0.1.0-SNAPSHOT"
+  libraryDependencies += "org.zeromq" %% "zeromq-scala-binding" % "0.0.1-SNAPSHOT"
 </code>
 </pre>
 
@@ -20,6 +20,6 @@ and if sbt 0.11.x:
 <code>
   resolvers += "zeromq-scala-binding-repo" at "http://kro.github.com/zeromq-scala-binding/maven"
 
-  addSbtPlugin("org.zeromq" %% "zeromq-scala-binding" % "0.1.0-SNAPSHOT")
+  addSbtPlugin("org.zeromq" %% "zeromq-scala-binding" % "0.0.1-SNAPSHOT")
 </code>
 </pre>
