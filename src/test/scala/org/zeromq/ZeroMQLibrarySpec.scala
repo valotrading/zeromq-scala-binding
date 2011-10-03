@@ -26,7 +26,7 @@ import com.sun.jna._
 import com.sun.jna.ptr._
 
 class ZeroMQLibrarySpec extends WordSpec with MustMatchers with BeforeAndAfter {
-  "ZeroMQ" must {
+  "ZeroMQLibrary" must {
     var zmq: ZeroMQLibrary = null
     var endpoint: String = null
     before {
@@ -125,6 +125,12 @@ class ZeroMQLibrarySpec extends WordSpec with MustMatchers with BeforeAndAfter {
       zmq.zmq_msg_move(dst, src) must equal(0)
       zmq.zmq_msg_close(dst)
       zmq.zmq_msg_close(src)
+    }
+    "zmq_msg_size" in {
+      val msg = new zmq_msg_t
+      zmq.zmq_msg_init_size(msg, new NativeLong(dataBytes.length))
+      zmq_msg_size(msg) must equal(dataBytes.length)
+      zmq.zmq_msg_close(msg)
     }
     "zmq_(poll|send|recv)" in { 
       val context = zmq.zmq_init(1)
