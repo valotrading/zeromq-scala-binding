@@ -1,3 +1,25 @@
 h1. Scala Binding for ZeroMQ
 
 The Scala binding for ZeroMQ is based on ZeroMQ versions 2.1.x and uses JNA for accessing native functions. The Scala binding is a thin wrapper of the ZeroMQ API, however, the Scala binding offers a jzmq like API, which intends to be compatible with the original API so that users that want to access ZeroMQ over JNA can switch over to use the Scala binding.
+
+h2. Installation and usage
+
+Create a file, <code>project/plugins/build.sbt</code>, for plugin library dependencies with the following lines, if you're using sbt 0.10.x:
+
+<pre>
+<code>
+  resolvers += "zeromq-scala-binding-repo" at "http://kro.github.com/zeromq-scala-binding/maven"
+
+  libraryDependencies += "org.zeromq" %% "zeromq-scala-binding" % "0.1.0-SNAPSHOT"
+</code>
+</pre>
+
+and if sbt 0.11.x:
+
+<pre>
+<code>
+  resolvers += "zeromq-scala-binding-repo" at "http://kro.github.com/zeromq-scala-binding/maven"
+
+  addSbtPlugin("org.zeromq" %% "zeromq-scala-binding" % "0.1.0-SNAPSHOT")
+</code>
+</pre>
