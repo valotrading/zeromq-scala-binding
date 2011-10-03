@@ -359,10 +359,6 @@ public class ZMQ {
   }
 
   public static class Poller {
-    public static final int POLLIN = 1;
-    public static final int POLLOUT = 2;
-    public static final int POLLERR = 4;
-
     private static final int SIZE_DEFAULT = 32;
     private static final int SIZE_INCREMENT = 16;
     private static final int UNINITIALIZED_TIMEOUT = -2;
@@ -377,7 +373,7 @@ public class ZMQ {
     private LinkedList<Integer> freeSlots = null;
 
     public int register(Socket socket) {
-      return register(socket, POLLIN | POLLOUT | POLLERR);
+      return register(socket, ZeroMQ$.MODULE$.ZMQ_POLLIN() | ZeroMQ$.MODULE$.ZMQ_POLLOUT() | ZeroMQ$.MODULE$.ZMQ_POLLERR());
     }
 
     public int register(Socket socket, int numEvents) {
@@ -464,15 +460,15 @@ public class ZMQ {
     }
 
     public boolean pollin(int index) {
-      return poll_mask(index, POLLIN);
+      return poll_mask(index, ZeroMQ$.MODULE$.ZMQ_POLLIN());
     }
 
     public boolean pollout(int index) {
-      return poll_mask(index, POLLOUT);
+      return poll_mask(index, ZeroMQ$.MODULE$.ZMQ_POLLOUT());
     }
 
     public boolean pollerr(int index) {
-      return poll_mask(index, POLLERR);
+      return poll_mask(index, ZeroMQ$.MODULE$.ZMQ_POLLERR());
     }
 
     protected Poller(Context context) { 
