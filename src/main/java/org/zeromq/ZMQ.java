@@ -3,6 +3,7 @@ package org.zeromq;
 import com.sun.jna.*;
 import com.sun.jna.ptr.*;
 
+import java.util.Arrays;
 import java.util.LinkedList;
 import org.zeromq.ZeroMQ$.*;
 import org.zeromq.ZeroMQLibrary;
@@ -364,9 +365,9 @@ public class ZMQ {
     private static final int UNINITIALIZED_TIMEOUT = -2;
 
     private long timeout = UNINITIALIZED_TIMEOUT;
-    private int size = 0;
-    private int next = 0;
-    private int used = 0;
+    private int nextEventIndex = 0;
+    private int maxEventCount = 0;
+    private int curEventCount = 0;
     private Socket[] sockets = null;
     private short[] events = null;
     private short[] revents = null;
@@ -381,31 +382,23 @@ public class ZMQ {
       if (!freeSlots.isEmpty()) {
         pos = freeSlots.remove();
       } else {
-        if (next >= size) {
-          int nsize = size + SIZE_INCREMENT;
-          Socket[] ns = new Socket[nsize];
-          short[] ne = new short[nsize];
-          short[] nr = new short[nsize];
-          for (int i = 0; i < next; i++) {
-            ns[i] = sockets[i];
-            ne[i] = events[i];
-            nr[i] = revents[i];
-          }
-          size = nsize;
-          sockets = ns;
-          events = ne;
-          revents = nr;
+        if (nextEventIndex >= maxEventCount) {
+          int newMaxEventCount = maxEventCount + SIZE_INCREMENT;
+          sockets = Arrays.copyOf(sockets, newMaxEventCount);
+          events = Arrays.copyOf(events, newMaxEventCount);
+          revents = Arrays.copyOf(revents, newMaxEventCount);
+          maxEventCount = newMaxEventCount;
         }
-        pos = next++;
+        pos = nextEventIndex++;
       }
       sockets[pos] = socket;
       events[pos] = (short) numEvents;
-      used++;
+      curEventCount++;
       return pos;
     }
 
     public void unregister(Socket socket) {
-      for (int index = 0; index < next; index++) {
+      for (int index = 0; index < nextEventIndex; index++) {
         if (sockets[index] == socket) {
           unregisterSocketAtIndex(index);
           break;
@@ -418,11 +411,11 @@ public class ZMQ {
       events[index] = 0;
       revents[index] = 0;
       freeSlots.add(index);
-      used--;
+      curEventCount--;
     }
 
     public Socket getSocket(int index) {
-      if (index < 0 || index >= next) {
+      if (index < 0 || index >= nextEventIndex) {
           return null;
       }
       return sockets[index];
@@ -437,11 +430,11 @@ public class ZMQ {
     }
 
     public int getSize() {
-      return size;
+      return maxEventCount;
     }
 
     public int getNext() {
-      return next;
+      return nextEventIndex;
     }
 
     public long poll() {
@@ -453,10 +446,32 @@ public class ZMQ {
     }
 
     public long poll(long timeout) {
-      for (int i = 0; i < next; i++) {
-        this.revents [i] = 0;
+      int pollItemCount = 0;
+      for (int i = 0; i < nextEventIndex; i++) {
+        revents[i] = 0;
       }
-      throw new UnsupportedOperationException();
+      zmq_pollitem_t[] items = new zmq_pollitem_t[curEventCount];
+      for (int socketIndex = 0; socketIndex < sockets.length; socketIndex++) {
+        if (sockets[socketIndex] == null) {
+          continue;
+        }
+        items[pollItemCount].socket = sockets[socketIndex].ptr;
+        items[pollItemCount].fd = 0;
+        items[pollItemCount].events = events[socketIndex];
+        items[pollItemCount].revents = 0;
+        pollItemCount++;
+      }
+      if (pollItemCount != curEventCount)
+        return 0;
+      int result = zmq.zmq_poll(items, curEventCount, new NativeLong(timeout));
+      for (int socketIndex = 0; socketIndex < sockets.length; socketIndex++) {
+        if (sockets[socketIndex] == null) {
+          continue;
+        }
+        revents[socketIndex] = items[pollItemCount].revents;
+        pollItemCount++;
+      }
+      return result;
     }
 
     public boolean pollin(int index) {
@@ -476,15 +491,15 @@ public class ZMQ {
     }
 
     protected Poller(Context context, int size) { 
-      this.size = size;
-      this.sockets = new Socket[size];
-      this.events = new short[size];
-      this.revents = new short[size];
-      freeSlots = new LinkedList<Integer>();
+      this.maxEventCount = size;
+      this.sockets = new Socket[maxEventCount];
+      this.events = new short[maxEventCount];
+      this.revents = new short[maxEventCount];
+      this.freeSlots = new LinkedList<Integer>();
     }
 
     private boolean poll_mask (int index, int mask) {
-      if (mask <= 0 || index < 0 || index >= next) {
+      if (mask <= 0 || index < 0 || index >= nextEventIndex) {
         return false;
       }
       return (revents[index] & mask) > 0;
