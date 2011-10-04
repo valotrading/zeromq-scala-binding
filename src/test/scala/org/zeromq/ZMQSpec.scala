@@ -17,6 +17,7 @@ package org.zeromq
 
 import org.scalatest.WordSpec
 import org.scalatest.matchers.MustMatchers
+import org.zeromq.ZMQ._
 
 class ZMQSpec extends WordSpec with MustMatchers {
   "ZMQ" must {
@@ -39,6 +40,27 @@ class ZMQSpec extends WordSpec with MustMatchers {
       sub.close
       pub.close
     }
+    "support polling of multiple sockets" in {
+      val context = ZMQ.context(1)
+      val (pub, poller) = (context.socket(ZMQ.PUB), context.poller)
+      pub.bind("inproc://zmq-spec")
+      val (sub_x, sub_y) = (connectSubscriber(context), connectSubscriber(context))
+      poller.register(sub_x)
+      poller.register(sub_y)
+      pub.send(outgoingMessage.getBytes, 0)
+      poller.poll must equal(2)
+      poller.pollin(0) must equal(true)
+      poller.pollin(1) must equal(true)
+      sub_x.close
+      sub_y.close
+      pub.close
+    }
+  }
+  def connectSubscriber(context: Context) = {
+    val socket = context.socket(ZMQ.SUB) 
+    socket.connect("inproc://zmq-spec")
+    socket.subscribe(Array.empty)
+    socket
   }
   lazy val outgoingMessage = "hello"
 }

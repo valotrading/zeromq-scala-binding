@@ -142,7 +142,7 @@ class ZeroMQLibrarySpec extends WordSpec with MustMatchers with BeforeAndAfter {
       zmq.zmq_msg_init_data(outgoingMsg, dataMemory, new NativeLong(dataBytes.length), null, null)
       zmq.zmq_msg_init(incomingMsg)
       zmq.zmq_send(pub, outgoingMsg, 0) must equal(0)
-      val items = new Array[zmq_pollitem_t](1)
+      val items = new zmq_pollitem_t().toArray(1).asInstanceOf[Array[zmq_pollitem_t]]
       items(0) = new zmq_pollitem_t
       items(0).socket = sub
       items(0).events = ZMQ_POLLIN

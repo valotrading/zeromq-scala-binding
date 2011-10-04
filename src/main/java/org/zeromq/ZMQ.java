@@ -482,12 +482,14 @@ public class ZMQ {
       }
       if (curEventCount == 0)
         return 0;
-      zmq_pollitem_t[] items = new zmq_pollitem_t[curEventCount];
+      zmq_pollitem_t[] items = (zmq_pollitem_t[]) new zmq_pollitem_t().toArray(curEventCount);
+      for (int i = 0; i < pollItemCount; i++) {
+        items[i] = new zmq_pollitem_t();
+      }
       for (int socketIndex = 0; socketIndex < sockets.length; socketIndex++) {
         if (sockets[socketIndex] == null) {
           continue;
         }
-        items[pollItemCount] = new zmq_pollitem_t();
         items[pollItemCount].socket = sockets[socketIndex].ptr;
         items[pollItemCount].fd = 0;
         items[pollItemCount].events = events[socketIndex];
