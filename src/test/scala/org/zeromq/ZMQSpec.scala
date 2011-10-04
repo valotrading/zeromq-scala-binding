@@ -21,6 +21,12 @@ import org.zeromq.ZMQ._
 
 class ZMQSpec extends WordSpec with MustMatchers {
   "ZMQ" must {
+    "support Socket#getType" in {
+      val context = ZMQ.context(1)
+      val sub = context.socket(ZMQ.SUB)
+      sub.getType must equal(ZMQ.SUB)
+      sub.close 
+    }
     "support pub-sub connection pattern" in {
       val context = ZMQ.context(1)
       val (pub, sub, poller) = (
