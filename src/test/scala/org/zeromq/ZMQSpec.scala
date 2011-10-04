@@ -22,11 +22,18 @@ class ZMQSpec extends WordSpec with MustMatchers {
   "ZMQ" must {
     "support pub-sub connection pattern" in {
       val context = ZMQ.context(1)
-      val (pub, sub) = (context.socket(ZMQ.PUB), context.socket(ZMQ.SUB))
+      val (pub, sub, poller) = (
+        context.socket(ZMQ.PUB), 
+        context.socket(ZMQ.SUB), 
+        context.poller
+      )
       pub.bind("inproc://zmq-spec")
       sub.connect("inproc://zmq-spec")
       sub.subscribe(Array.empty)
+      poller.register(sub)
       pub.send(outgoingMessage.getBytes, 0)
+      poller.poll must equal(1)
+      poller.pollin(0) must equal(true)
       val incomingMessage = sub.recv(0)
       incomingMessage must equal(outgoingMessage.getBytes)
       sub.close
