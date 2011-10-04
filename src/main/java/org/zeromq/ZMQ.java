@@ -298,7 +298,7 @@ public class ZMQ {
 
     public byte[] recv(int flags) {
       zmq_msg_t message = newZmqMessage();
-      if (zmq.zmq_send(ptr, message, flags) != 0) {
+      if (zmq.zmq_recv(ptr, message, flags) != 0) {
         if (zmq.zmq_errno() == ZeroMQ$.MODULE$.EAGAIN()) {
           if (zmq.zmq_msg_close(message) != 0) {
             raiseZMQException();
@@ -310,10 +310,13 @@ public class ZMQ {
           raiseZMQException();
         }
       }
+      Pointer data = zmq.zmq_msg_data(message);
+      int length = zmq.zmq_msg_size(message);
+      byte[] dataByteArray = data.getByteArray(0, length);
       if (zmq.zmq_msg_close(message) != 0) {
         raiseZMQException();
       }
-      return zmq.zmq_msg_data(message).getByteArray(0, zmq.zmq_msg_size(message));
+      return dataByteArray;
     }
 
     protected Socket(Context context, int type) {
