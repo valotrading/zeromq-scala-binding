@@ -31,6 +31,9 @@ object ZeroMQ {
   val ZMQ_PUSH = 8
   val ZMQ_XPUB = 9
   val ZMQ_XSUB = 10
+  /** Send / receive options */
+  val ZMQ_NOBLOCK = 1
+  val ZMQ_SNDMORE = 2 
   /** Socket options */
   val ZMQ_HWM = 1
   val ZMQ_SWAP = 3
