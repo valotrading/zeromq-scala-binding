@@ -1,5 +1,3 @@
-sbtPlugin := true
-
 organization := "org.zeromq"
 
 name := "zeromq-scala-binding"
