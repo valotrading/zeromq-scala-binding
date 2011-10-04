@@ -4,22 +4,12 @@ The Scala binding for ZeroMQ is based on ZeroMQ versions 2.1.x and uses JNA for 
 
 h2. Installation and usage
 
-Create a file, <code>project/plugins/build.sbt</code>, for plugin library dependencies with the following lines, if you're using sbt 0.10.x:
+Create a file, <code>project/plugins/build.sbt</code>, for plugin library dependencies with the following lines:
 
 <pre>
 <code>
   resolvers += "zeromq-scala-binding-repo" at "http://kro.github.com/zeromq-scala-binding/maven"
 
   libraryDependencies += "org.zeromq" %% "zeromq-scala-binding" % "0.0.1-SNAPSHOT"
-</code>
-</pre>
-
-and if sbt 0.11.x:
-
-<pre>
-<code>
-  resolvers += "zeromq-scala-binding-repo" at "http://kro.github.com/zeromq-scala-binding/maven"
-
-  addSbtPlugin("org.zeromq" %% "zeromq-scala-binding" % "0.0.1-SNAPSHOT")
 </code>
 </pre>
