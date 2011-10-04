@@ -129,7 +129,7 @@ class ZeroMQLibrarySpec extends WordSpec with MustMatchers with BeforeAndAfter {
     "zmq_msg_size" in {
       val msg = new zmq_msg_t
       zmq.zmq_msg_init_size(msg, new NativeLong(dataBytes.length))
-      zmq_msg_size(msg) must equal(dataBytes.length)
+      zmq.zmq_msg_size(msg) must equal(dataBytes.length)
       zmq.zmq_msg_close(msg)
     }
     "zmq_(poll|send|recv)" in { 
