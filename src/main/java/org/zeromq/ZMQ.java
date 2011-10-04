@@ -347,8 +347,13 @@ public class ZMQ {
 
     private void setBytesSockopt(int option, byte[] optval) {
       NativeLong length = new NativeLong(optval.length);
-      Memory value = new Memory(optval.length);
-      value.write(0, optval, 0, optval.length);
+      Pointer value = null;
+      if (optval.length > 0) {
+        value = value = new Memory(optval.length);
+        value.write(0, optval, 0, optval.length);
+      } else {
+        value = Pointer.NULL;
+      }
       zmq.zmq_setsockopt(ptr, option, value, length);
     }
 
