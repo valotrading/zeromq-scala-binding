@@ -8,7 +8,7 @@ Create a file, <code>project/plugins/build.sbt</code>, for plugin library depend
 
 <pre>
 <code>
-  resolvers += "zeromq-scala-binding-repo" at "http://kro.github.com/zeromq-scala-binding/maven"
+  resolvers += "Typesafe Repository (snapshots)" at "http://repo.typesafe.com/typesafe/snapshots/"
 
   libraryDependencies += "org.zeromq" %% "zeromq-scala-binding" % "0.0.1-SNAPSHOT"
 </code>
