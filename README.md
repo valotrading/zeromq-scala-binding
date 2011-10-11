@@ -6,12 +6,8 @@ The Scala binding for ZeroMQ is based on ZeroMQ versions 2.1.x and uses JNA for 
 Installation and usage
 ----------------------
 
-Create a file, <code>project/plugins/build.sbt</code>, for plugin library dependencies with the following lines:
+Create a file, `project/plugins/build.sbt`, for plugin library dependencies with the following lines:
 
-<pre>
-<code>
-  resolvers += "Typesafe Repository (snapshots)" at "http://repo.typesafe.com/typesafe/snapshots/"
+    resolvers += "Typesafe Repository (snapshots)" at "http://repo.typesafe.com/typesafe/snapshots/"
 
-  libraryDependencies += "org.zeromq" %% "zeromq-scala-binding" % "0.0.1-SNAPSHOT"
-</code>
-</pre>
+    libraryDependencies += "org.zeromq" %% "zeromq-scala-binding" % "0.0.1-SNAPSHOT"
