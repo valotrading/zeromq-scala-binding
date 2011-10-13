@@ -61,6 +61,12 @@ class ZMQSpec extends WordSpec with MustMatchers {
       sub_y.close
       pub.close
     }
+    "support sending of zero-length messages" in {
+      val context = ZMQ.context(1)
+      val pub = context.socket(ZMQ.PUB)
+      pub.send("".getBytes, 0)
+      pub.close
+    }
   }
   def connectSubscriber(context: Context) = {
     val socket = context.socket(ZMQ.SUB) 

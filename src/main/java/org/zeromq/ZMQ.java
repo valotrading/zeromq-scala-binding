@@ -362,10 +362,16 @@ public class ZMQ {
 
     private zmq_msg_t newZmqMessage(byte[] msg) {
       zmq_msg_t message = new zmq_msg_t();
-      Memory mem = new Memory(msg.length);
-      mem.write(0, msg, 0, msg.length);
-      if (zmq.zmq_msg_init_data(message, mem, new NativeLong(msg.length), null, null) != 0) {
-        raiseZMQException();
+      if (msg.length == 0) {
+        if (zmq.zmq_msg_init_size(message, new NativeLong(msg.length)) != 0) {
+          raiseZMQException();
+        }
+      } else {
+        Memory mem = new Memory(msg.length);
+        mem.write(0, msg, 0, msg.length);
+        if (zmq.zmq_msg_init_data(message, mem, new NativeLong(msg.length), null, null) != 0) {
+          raiseZMQException();
+        }
       }
       return message;
     }
