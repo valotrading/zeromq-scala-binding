@@ -8,6 +8,6 @@ Installation and usage
 
 Create a file, `project/plugins/build.sbt`, for plugin library dependencies with the following lines:
 
-    resolvers += "Typesafe Repository (snapshots)" at "http://repo.typesafe.com/typesafe/snapshots/"
+    resolvers += "Typesafe Repository (releases)" at "http://repo.typesafe.com/typesafe/releases/"
 
-    libraryDependencies += "org.zeromq" %% "zeromq-scala-binding" % "0.0.1-SNAPSHOT"
+    libraryDependencies += "org.zeromq" %% "zeromq-scala-binding" % "0.0.2"
