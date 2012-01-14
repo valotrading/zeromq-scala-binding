@@ -18,7 +18,7 @@ public class ZMQ {
   private static final int[] majorVersion = new int[1];
   private static final int[] minorVersion = new int[1];
   private static final int[] patchVersion = new int[1];
-  
+
   public static final int NOBLOCK = ZeroMQ$.MODULE$.ZMQ_NOBLOCK();
   public static final int DONTWAIT = ZeroMQ$.MODULE$.ZMQ_NOBLOCK();
   public static final int SNDMORE = ZeroMQ$.MODULE$.ZMQ_SNDMORE();
@@ -145,6 +145,12 @@ public class ZMQ {
       if (getFullVersion() < makeVersion(3, 0, 0))
         return -1;
       return getLongSockopt(ZeroMQ$.MODULE$.ZMQ_RCVHWM());
+    }
+
+    public long getHWM() {
+      if (getFullVersion() < makeVersion(3, 0, 0))
+        return -1;
+      return getLongSockopt(ZeroMQ$.MODULE$.ZMQ_HWM());
     }
 
     public long getSwap() {
