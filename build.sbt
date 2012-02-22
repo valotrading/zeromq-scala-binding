@@ -2,7 +2,7 @@ organization := "org.zeromq"
 
 name := "zeromq-scala-binding"
 
-version := "0.0.5-SNAPSHOT"
+version := "0.0.6-SNAPSHOT"
 
 libraryDependencies ++= Seq(
   "net.java.dev.jna" % "jna" % "3.0.9",
