@@ -17,6 +17,7 @@ package org.zeromq
 
 import com.sun.jna._
 import com.sun.jna.ptr._
+import jnr.constants.platform.Errno
 
 object ZeroMQ {
   /** Socket types */
@@ -65,8 +66,8 @@ object ZeroMQ {
   val ZMQ_FORWARDER = 2
   val ZMQ_QUEUE = 3
   /** Unix errors */
-  val EINVAL = 22
-  val EAGAIN = 11
+  val EINVAL = Errno.EINVAL.intValue
+  val EAGAIN = Errno.EAGAIN.intValue
   /** ZMQ errors */
   val ZMQ_HAUSNUMERO = 156384712
   val EFSM = ZMQ_HAUSNUMERO + 51
