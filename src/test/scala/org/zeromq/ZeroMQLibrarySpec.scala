@@ -66,7 +66,7 @@ class ZeroMQLibrarySpec extends WordSpec with MustMatchers with BeforeAndAfter {
     }
     "zmq_errno" in { 
       zmq.zmq_init(-1)
-      zmq.zmq_errno must equal (EINVAL)
+      zmq.zmq_errno must equal(EINVAL)
     }
     "zmq_(get|set)sockopt" in {
       val context = zmq.zmq_init(1)
@@ -141,12 +141,14 @@ class ZeroMQLibrarySpec extends WordSpec with MustMatchers with BeforeAndAfter {
       val (outgoingMsg, incomingMsg) = (new zmq_msg_t, new zmq_msg_t)
       zmq.zmq_msg_init_data(outgoingMsg, dataMemory, new NativeLong(dataBytes.length), null, null)
       zmq.zmq_msg_init(incomingMsg)
+      zmq.zmq_recv(sub, incomingMsg, ZMQ_NOBLOCK) must equal(-1)
+      zmq.zmq_errno must equal(EAGAIN)
       zmq.zmq_send(pub, outgoingMsg, 0) must equal(0)
       val items = new zmq_pollitem_t().toArray(1).asInstanceOf[Array[zmq_pollitem_t]]
       items(0) = new zmq_pollitem_t
       items(0).socket = sub
       items(0).events = ZMQ_POLLIN
-      zmq.zmq_poll(items, 1, new NativeLong(-1)) must equal (1)
+      zmq.zmq_poll(items, 1, new NativeLong(-1)) must equal(1)
       zmq.zmq_recv(sub, incomingMsg, 0) must equal(0)
       zmq.zmq_msg_close(outgoingMsg)
       zmq.zmq_close(sub)
@@ -163,14 +165,14 @@ class ZeroMQLibrarySpec extends WordSpec with MustMatchers with BeforeAndAfter {
     }
     "zmq_term" in { 
       val context = zmq.zmq_init(1)
-      zmq.zmq_term(context) must equal (0)
+      zmq.zmq_term(context) must equal(0)
     }
     "zmq_version" in {
       val (major_x, minor_x, patch_x) = (Array(1), Array(1), Array(1))
       val (major_y, minor_y, patch_y) = (Array(1), Array(1), Array(1))
       zmq.zmq_version(major_x, minor_x, patch_x)
       zmq.zmq_version(major_y, minor_y, patch_y)
-      (major_x(0), minor_x(0), patch_x(0)) must equal (major_y(0), minor_y(0), patch_y(0))
+      (major_x(0), minor_x(0), patch_x(0)) must equal(major_y(0), minor_y(0), patch_y(0))
     }
   }
   def randomPort = 1024 + new Random(System.currentTimeMillis).nextInt(4096)
