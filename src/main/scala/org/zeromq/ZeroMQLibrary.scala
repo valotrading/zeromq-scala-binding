@@ -92,7 +92,7 @@ object ZeroMQ {
 trait ZeroMQLibrary extends Library {
   def zmq_bind(socket: Pointer, endpoint: String): Int
   def zmq_close(socket: Pointer): Int
-  def zmq_connect(scoket: Pointer, endpoint: String): Int
+  def zmq_connect(socket: Pointer, endpoint: String): Int
   def zmq_device(device: Int, frontend: Pointer, backend: Pointer): Int
   def zmq_errno: Int
   def zmq_getsockopt(socket: Pointer, option_name: Int, option_value: Pointer, option_len: LongByReference): Int
