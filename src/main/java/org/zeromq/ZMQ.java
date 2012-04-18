@@ -461,11 +461,11 @@ public class ZMQ {
     private class MessageDataBuffer implements zmq_free_fn {
       private HashSet<Pointer> buffer = new HashSet<Pointer>();
 
-      public void add(Pointer data) {
+      public synchronized void add(Pointer data) {
         buffer.add(data);
       }
 			
-      public void invoke(Pointer data, Pointer memory) {
+      public synchronized void invoke(Pointer data, Pointer memory) {
         buffer.remove(memory);
       }
     }
