@@ -4,6 +4,7 @@ import com.sun.jna.*;
 import com.sun.jna.ptr.*;
 
 import java.util.Arrays;
+import java.util.HashSet;
 import java.util.LinkedList;
 import org.zeromq.ZeroMQ$.*;
 import org.zeromq.ZeroMQLibrary;
@@ -94,7 +95,8 @@ public class ZMQ {
 
   public static class Socket {
     protected Pointer ptr;
-
+    MessageDataBuffer messageDataBuffer = new MessageDataBuffer();
+		
     public void close() {
       zmq.zmq_close(ptr);
     }
@@ -433,7 +435,9 @@ public class ZMQ {
       } else {
         Memory mem = new Memory(msg.length);
         mem.write(0, msg, 0, msg.length);
-        if (zmq.zmq_msg_init_data(message, mem, new NativeLong(msg.length), null, null) != 0) {
+        if (zmq.zmq_msg_init_data(message, mem, new NativeLong(msg.length), messageDataBuffer, mem) == 0) {
+          messageDataBuffer.add(mem);
+        } else {
           raiseZMQException();
         }
       }
@@ -452,6 +456,18 @@ public class ZMQ {
       int errno = zmq.zmq_errno();
       String reason = zmq.zmq_strerror(errno);
       throw new ZMQException(reason, errno);
+    }
+
+    private class MessageDataBuffer implements zmq_free_fn {
+      private HashSet<Pointer> buffer = new HashSet<Pointer>();
+
+      public void add(Pointer data) {
+        buffer.add(data);
+      }
+			
+      public void invoke(Pointer data, Pointer memory) {
+        buffer.remove(memory);
+      }
     }
   }
 

@@ -18,5 +18,6 @@ package org.zeromq;
 import com.sun.jna.*;
 import com.sun.jna.ptr.*;
 
-public class zmq_free_fn extends PointerType {
+public interface zmq_free_fn extends Callback {
+  void invoke(Pointer data, Pointer memory);
 }
