@@ -10,4 +10,4 @@ Create a file, `project/plugins/build.sbt`, for plugin library dependencies with
 
     resolvers += "Typesafe Repository (releases)" at "http://repo.typesafe.com/typesafe/releases/"
 
-    libraryDependencies += "org.zeromq" %% "zeromq-scala-binding" % "0.0.5"
+    libraryDependencies += "org.zeromq" %% "zeromq-scala-binding" % "0.0.6"
