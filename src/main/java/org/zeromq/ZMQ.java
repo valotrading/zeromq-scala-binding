@@ -435,7 +435,7 @@ public class ZMQ {
       NativeLong length = new NativeLong(optval.length);
       Pointer value = null;
       if (optval.length > 0) {
-        value = value = new Memory(optval.length);
+        value = new Memory(optval.length);
         value.write(0, optval, 0, optval.length);
       } else {
         value = Pointer.NULL;
