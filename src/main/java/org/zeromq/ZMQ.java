@@ -318,17 +318,17 @@ public class ZMQ {
     }
 
     public void setIdentity(byte[] identity) {
-      log.debug("Setting identity to " + new String(identity));
+      log.debug("Setting identity to '" + new String(identity) + "'");
       setBytesSockopt(ZeroMQ$.MODULE$.ZMQ_IDENTITY(), identity);
     }
 
     public void subscribe(byte[] topic) {
-      log.debug("Subscribing to " + new String(topic));
+      log.debug("Subscribing to '" + new String(topic) + "'");
       setBytesSockopt(ZeroMQ$.MODULE$.ZMQ_SUBSCRIBE(), topic);
     }
 
     public void unsubscribe(byte[] topic) {
-      log.debug("Unsubscribing from " + new String(topic));
+      log.debug("Unsubscribing from '" + new String(topic) + "'");
       setBytesSockopt(ZeroMQ$.MODULE$.ZMQ_UNSUBSCRIBE(), topic);
     }
 
@@ -379,12 +379,13 @@ public class ZMQ {
       zmq_msg_t message = newZmqMessage(msg);
       if (zmq.zmq_send(ptr, message, flags) != 0) { // problem sending
         if (zmq.zmq_errno() == ZeroMQ$.MODULE$.EAGAIN()) {
-          log.debug("Non-blocking mode was requested and the message cannot be sent at the moment");
+          log.debug("  Non-blocking mode was requested and the message (" + message + ") cannot be sent at the moment: '" +
+                    new String(Arrays.copyOfRange(msg, 0, msg.length)) + "'");
           if (zmq.zmq_msg_close(message) != 0) {
-            log.debug("Problem closing ZMQ message");
+            log.debug("  Problem closing ZMQ message");
             raiseZMQException();
           } else {
-            log.debug("Message not sent");
+            log.debug("  Message not sent");
             return false;
           }
         } else {
@@ -394,10 +395,10 @@ public class ZMQ {
         }
       }
       if (zmq.zmq_msg_close(message) != 0) {
-        log.debug("Problem closing ZMQ message");
+        log.debug("  Problem closing ZMQ message");
         raiseZMQException();
       }
-      log.debug("Message sent: '" + new String(Arrays.copyOfRange(msg, 7, msg.length+7)) + "'");
+      log.debug("  Message sent: '" + new String(Arrays.copyOfRange(msg, 7, msg.length+7)) + "'");
       return true;
     }
 
