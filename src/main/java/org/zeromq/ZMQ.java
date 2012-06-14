@@ -245,48 +245,64 @@ public class ZMQ {
     public void setLinger(long linger) {
       if (getFullVersion() < makeVersion(2, 1, 0))
         return;
+
+      log.debug("Setting linger to " + linger);
       setLongSockopt(ZeroMQ$.MODULE$.ZMQ_LINGER(), linger);
     }
 
     public void setReconnectIVL(long reconnectIVL) {
       if (getFullVersion() < makeVersion(3, 0, 0))
         return;
+
+      log.debug("Setting reconnectIVL to " + reconnectIVL);
       setLongSockopt(ZeroMQ$.MODULE$.ZMQ_RECONNECT_IVL(), reconnectIVL);
     }
 
     public void setBacklog(long backlog) {
       if (getFullVersion() < makeVersion(3, 0, 0))
         return;
+
+      log.debug("Setting backlog to " + backlog);
       setLongSockopt(ZeroMQ$.MODULE$.ZMQ_BACKLOG(), backlog);
     }
 
     public void setReconnectIVLMax(long reconnectIVLMax) {
       if (getFullVersion() < makeVersion(3, 0, 0))
         return;
+
+      log.debug("Setting reconnectIVLMax to " + reconnectIVLMax);
       setLongSockopt(ZeroMQ$.MODULE$.ZMQ_RECONNECT_IVL_MAX(), reconnectIVLMax);
     }
 
     public void setMaxMsgSize(long maxMsgSize) {
       if (getFullVersion() < makeVersion(3, 0, 0))
         return;
+
+      log.debug("Setting maxMsgSize to " + maxMsgSize);
       setLongSockopt(ZeroMQ$.MODULE$.ZMQ_MAXMSGSIZE(), maxMsgSize);
     }
 
     public void setSndHWM(long sndHWM) {
       if (getFullVersion() < makeVersion(3, 0, 0))
         return;
+
+      log.debug("Setting sndHWM to " + sndHWM);
       setLongSockopt(ZeroMQ$.MODULE$.ZMQ_SNDHWM(), sndHWM);
     }
 
     public void setRcvHWM(long rcvHWM) {
       if (getFullVersion() >= makeVersion(3, 0, 0))
         return;
+
+      log.debug("Setting rcvHWM to " + rcvHWM);
       setLongSockopt(ZeroMQ$.MODULE$.ZMQ_RCVHWM(), rcvHWM);
     }
 
     public void setHWM(long hwm) {
       if (getFullVersion() >= makeVersion(3, 0, 0))
         return;
+
+      log.debug("Setting HWM to " + hwm);
       setLongSockopt(ZeroMQ$.MODULE$.ZMQ_HWM(), hwm);
     }
 
@@ -297,48 +313,60 @@ public class ZMQ {
     }
 
     public void setAffinity(long affinity) {
+      log.debug("Setting affinity to " + affinity);
       setLongSockopt(ZeroMQ$.MODULE$.ZMQ_AFFINITY(), affinity);
     }
 
     public void setIdentity(byte[] identity) {
+      log.debug("Setting identity to " + new String(identity));
       setBytesSockopt(ZeroMQ$.MODULE$.ZMQ_IDENTITY(), identity);
     }
 
     public void subscribe(byte[] topic) {
+      log.debug("Subscribing to " + new String(topic));
       setBytesSockopt(ZeroMQ$.MODULE$.ZMQ_SUBSCRIBE(), topic);
     }
 
     public void unsubscribe(byte[] topic) {
+      log.debug("Unsubscribing from " + new String(topic));
       setBytesSockopt(ZeroMQ$.MODULE$.ZMQ_UNSUBSCRIBE(), topic);
     }
 
     public void setRate (long rate) {
+      log.debug("Setting rate to " + rate);
       setLongSockopt(ZeroMQ$.MODULE$.ZMQ_RATE(), rate);
     }
 
     public void setRecoveryInterval(long recovery_ivl) {
+      log.debug("Setting recovery interval to " + recovery_ivl);
       setLongSockopt(ZeroMQ$.MODULE$.ZMQ_RECONNECT_IVL(), recovery_ivl);
     }
 
     public void setMulticastLoop(boolean mcast_loop) {
       if (getFullVersion() >= makeVersion(3, 0, 0))
         return;
+
+      log.debug("Setting multicast loop to " + mcast_loop);
       setLongSockopt(ZeroMQ$.MODULE$.ZMQ_MCAST_LOOP(), mcast_loop ? 1 : 0);
     }
 
     public void setSendBufferSize(long sndbuf) {
+      log.debug("Setting send buffer size to " + sndbuf);
       setLongSockopt(ZeroMQ$.MODULE$.ZMQ_SNDBUF(), sndbuf);
     }
 
     public void setReceiveBufferSize(long rcvbuf) {
+      log.debug("Setting receive buffer size to " + rcvbuf);
       setLongSockopt(ZeroMQ$.MODULE$.ZMQ_RCVBUF(), rcvbuf);
     }
 
     public void bind(String addr) {
+      log.debug("Binding to " + addr);
       zmq.zmq_bind(ptr, addr);
     }
 
     public void connect(String addr) {
+      log.debug("Connecting to " + addr);
       zmq.zmq_connect(ptr, addr);
     }
 
