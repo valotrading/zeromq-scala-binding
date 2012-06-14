@@ -397,7 +397,7 @@ public class ZMQ {
         log.debug("Problem closing ZMQ message");
         raiseZMQException();
       }
-      log.debug("Message sent: '" + new String(msg) + "'");
+      log.debug("Message sent: '" + new String(Arrays.copyOfRange(msg, 7, msg.length+7)) + "'");
       return true;
     }
 
