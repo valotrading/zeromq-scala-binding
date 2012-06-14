@@ -464,9 +464,8 @@ public class ZMQ {
 
     private zmq_msg_t newZmqMessage() {
       zmq_msg_t message = new zmq_msg_t();
-      if (zmq.zmq_msg_init(message) != 0) {
+      if (zmq.zmq_msg_init(message) != 0)
         raiseZMQException();
-      }
       return message;
     }
 
@@ -474,6 +473,7 @@ public class ZMQ {
     private void raiseZMQException() {
       int errno = zmq.zmq_errno();
       String reason = zmq.zmq_strerror(errno);
+      log.debug("Throwing ZMQException " + errno + ": " + reason);
       throw new ZMQException(reason, errno);
     }
 
