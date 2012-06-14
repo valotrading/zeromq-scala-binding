@@ -6,8 +6,8 @@ import com.sun.jna.ptr.*;
 import java.util.Arrays;
 import java.util.HashSet;
 import java.util.LinkedList;
-import org.zeromq.ZeroMQ$.*;
-import org.zeromq.ZeroMQLibrary;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * Offers an API similar to that of jzmq [1] written by Gonzalo Diethelm.
@@ -15,6 +15,7 @@ import org.zeromq.ZeroMQLibrary;
  * 1. https://github.com/zeromq/jzmq
  */
 public class ZMQ {
+  private static Logger log = LoggerFactory.getLogger(ZMQ.class);
   private static final ZeroMQLibrary zmq = ZeroMQ$.MODULE$.loadLibrary();
   private static final int[] majorVersion = new int[1];
   private static final int[] minorVersion = new int[1];
@@ -96,7 +97,7 @@ public class ZMQ {
   public static class Socket {
     protected Pointer ptr;
     MessageDataBuffer messageDataBuffer = new MessageDataBuffer();
-		
+
     public void close() {
       zmq.zmq_close(ptr);
     }
@@ -341,13 +342,21 @@ public class ZMQ {
       zmq.zmq_connect(ptr, addr);
     }
 
+      /**
+       * @see http://api.zeromq.org/2-1:zmq-send
+       * @return true if successful
+       * @throws ZMQException for any problem */
     public boolean send(byte[] msg, int flags) {
+      log.debug("Entering ZMQ.send()");
       zmq_msg_t message = newZmqMessage(msg);
-      if (zmq.zmq_send(ptr, message, flags) != 0) {
+      if (zmq.zmq_send(ptr, message, flags) != 0) { // problem sending
         if (zmq.zmq_errno() == ZeroMQ$.MODULE$.EAGAIN()) {
+          log.debug("Non-blocking mode was requested and the message cannot be sent at the moment");
           if (zmq.zmq_msg_close(message) != 0) {
+            log.debug("Problem closing ZMQ message");
             raiseZMQException();
           } else {
+            log.debug("Message not sent");
             return false;
           }
         } else {
@@ -357,15 +366,23 @@ public class ZMQ {
         }
       }
       if (zmq.zmq_msg_close(message) != 0) {
+        log.debug("Problem closing ZMQ message");
         raiseZMQException();
       }
+      log.debug("Message sent: '" + new String(msg) + "'");
       return true;
     }
 
+      /**
+       * @see http://api.zeromq.org/2-1:zmq-recv
+       * @return array of bytes containing received message if successful, or null if not
+       * @throws ZMQException for any problem */
     public byte[] recv(int flags) {
+      log.debug("Entering ZMQ.recv()");
       zmq_msg_t message = newZmqMessage();
       if (zmq.zmq_recv(ptr, message, flags) != 0) {
         if (zmq.zmq_errno() == ZeroMQ$.MODULE$.EAGAIN()) {
+          log.debug("Non-blocking mode was requested and no messages are available at the moment.");
           if (zmq.zmq_msg_close(message) != 0) {
             raiseZMQException();
           } else {
@@ -379,9 +396,9 @@ public class ZMQ {
       Pointer data = zmq.zmq_msg_data(message);
       int length = zmq.zmq_msg_size(message);
       byte[] dataByteArray = data.getByteArray(0, length);
-      if (zmq.zmq_msg_close(message) != 0) {
+      if (zmq.zmq_msg_close(message) != 0)
         raiseZMQException();
-      }
+      log.debug("Message received: '" + new String(dataByteArray) + "'");
       return dataByteArray;
     }
 
@@ -426,6 +443,7 @@ public class ZMQ {
       zmq.zmq_setsockopt(ptr, option, value, length);
     }
 
+    /** @throws ZMQException if a problem was encountered creating a new ZMQ Message */
     private zmq_msg_t newZmqMessage(byte[] msg) {
       zmq_msg_t message = new zmq_msg_t();
       if (msg.length == 0) {
@@ -452,6 +470,7 @@ public class ZMQ {
       return message;
     }
 
+    /** @throws ZMQException with reason, which is looked up from the zmq error number */
     private void raiseZMQException() {
       int errno = zmq.zmq_errno();
       String reason = zmq.zmq_strerror(errno);
@@ -464,7 +483,7 @@ public class ZMQ {
       public synchronized void add(Pointer data) {
         buffer.add(data);
       }
-			
+
       public synchronized void invoke(Pointer data, Pointer memory) {
         buffer.remove(memory);
       }
@@ -608,11 +627,11 @@ public class ZMQ {
       return poll_mask(index, POLLERR);
     }
 
-    protected Poller(Context context) { 
+    protected Poller(Context context) {
       this(context, SIZE_DEFAULT);
     }
 
-    protected Poller(Context context, int size) { 
+    protected Poller(Context context, int size) {
       this.maxEventCount = size;
       this.sockets = new Socket[maxEventCount];
       this.events = new short[maxEventCount];
