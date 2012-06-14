@@ -379,7 +379,7 @@ public class ZMQ {
       zmq_msg_t message = newZmqMessage(msg);
       if (zmq.zmq_send(ptr, message, flags) != 0) { // problem sending
         if (zmq.zmq_errno() == ZeroMQ$.MODULE$.EAGAIN()) {
-          log.debug("  Non-blocking mode was requested and the message (" + message + ") cannot be sent at the moment: '" +
+          log.debug("  Non-blocking mode was requested and the message cannot be sent at the moment: '" +
                     new String(Arrays.copyOfRange(msg, 0, msg.length)) + "'");
           if (zmq.zmq_msg_close(message) != 0) {
             log.debug("  Problem closing ZMQ message");
