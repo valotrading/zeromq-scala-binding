@@ -411,7 +411,7 @@ public class ZMQ {
       zmq_msg_t message = newZmqMessage();
       if (zmq.zmq_recv(ptr, message, flags) != 0) {
         if (zmq.zmq_errno() == ZeroMQ$.MODULE$.EAGAIN()) {
-          log.debug("Non-blocking mode was requested and no messages are available at the moment.");
+          log.debug("  Non-blocking mode was requested and no messages are available at the moment.");
           if (zmq.zmq_msg_close(message) != 0) {
             raiseZMQException();
           } else {
@@ -419,15 +419,18 @@ public class ZMQ {
           }
         } else {
           zmq.zmq_msg_close(message);
+          log.debug("  Problem receiving message: '" + message + "'");
           raiseZMQException();
         }
       }
       Pointer data = zmq.zmq_msg_data(message);
       int length = zmq.zmq_msg_size(message);
       byte[] dataByteArray = data.getByteArray(0, length);
-      if (zmq.zmq_msg_close(message) != 0)
+      if (zmq.zmq_msg_close(message) != 0) {
+        log.debug("  Problem extracting data from message: '" + message + "'");
         raiseZMQException();
-      log.debug("Message received: '" + new String(dataByteArray) + "'");
+      }
+      log.debug("  Message received: '" + new String(dataByteArray) + "'");
       return dataByteArray;
     }
 
