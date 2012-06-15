@@ -23,8 +23,10 @@ public class ZMQ {
 
   public static final int NOBLOCK = ZeroMQ$.MODULE$.ZMQ_NOBLOCK();
   public static final int DONTWAIT = ZeroMQ$.MODULE$.ZMQ_NOBLOCK();
-  public static final int SNDMORE = ZeroMQ$.MODULE$.ZMQ_SNDMORE();
   public static final int PAIR = ZeroMQ$.MODULE$.ZMQ_PAIR();
+
+  /** Indicates that a message has multiple frames and this is not the last frame */
+  public static final int SNDMORE = ZeroMQ$.MODULE$.ZMQ_SNDMORE();
   public static final int PUB = ZeroMQ$.MODULE$.ZMQ_PUB();
   public static final int SUB = ZeroMQ$.MODULE$.ZMQ_SUB();
   public static final int REQ = ZeroMQ$.MODULE$.ZMQ_REQ();
@@ -371,6 +373,8 @@ public class ZMQ {
     }
 
       /**
+       * Send a frame in blocking mode; if in non-blocking mode and the frame completes a message, send it
+       * @param flags If set, the SNDMORE flag indicates that additional frames follow to complete the message
        * @see http://api.zeromq.org/2-1:zmq-send
        * @return true if successful
        * @throws ZMQException for any problem */
@@ -382,10 +386,10 @@ public class ZMQ {
           log.debug("  Non-blocking mode was requested and the message cannot be sent at the moment: '" +
                     new String(Arrays.copyOfRange(msg, 0, msg.length)) + "'");
           if (zmq.zmq_msg_close(message) != 0) {
-            log.debug("  Problem closing ZMQ message");
+            log.debug("  Problem closing ZMQ frame");
             raiseZMQException();
           } else {
-            log.debug("  Message not sent");
+            log.debug("  Frame not sent");
             return false;
           }
         } else {
@@ -395,7 +399,7 @@ public class ZMQ {
         }
       }
       if (zmq.zmq_msg_close(message) != 0) {
-        log.debug("  Problem closing ZMQ message");
+        log.debug("  Problem closing ZMQ frame");
         raiseZMQException();
       }
       log.debug("  Message sent: '" + new String(Arrays.copyOfRange(msg, 7, msg.length+7)) + "'");
