@@ -2,12 +2,14 @@ organization := "org.zeromq"
 
 name := "zeromq-scala-binding"
 
-version := "0.0.7-SNAPSHOT"
+version := "0.0.8-SNAPSHOT"
 
 libraryDependencies ++= Seq(
-  "net.java.dev.jna" % "jna" % "3.0.9",
-  "com.github.jnr" % "jnr-constants" % "0.8.2",
-  "org.scalatest" %% "scalatest" % "1.6.1" % "test"
+  "net.java.dev.jna" %  "jna"             % "3.0.9",
+  "com.github.jnr"   %  "jnr-constants"   % "0.8.2",
+  //"ch.qos.logback"   %  "logback-classic" % "1.0.0", // uncomment to see logging output
+  "org.slf4j"        %  "slf4j-api"       % "1.6.4",
+  "org.scalatest"    %% "scalatest"       % "1.6.1" % "test"
 )
 
 scalacOptions := Seq("-deprecation", "-unchecked")
@@ -17,7 +19,7 @@ publishMavenStyle := true
 publishTo <<= version { v: String =>
   val nexus = "https://oss.sonatype.org/"
   if (v.trim.endsWith("SNAPSHOT")) Some("snapshots" at nexus + "content/repositories/snapshots")
-  else                             Some("releases" at nexus + "service/local/staging/deploy/maven2")
+  else                             Some("releases"  at nexus + "service/local/staging/deploy/maven2")
 }
 
 seq(javadoc.JavadocPlugin.javadocSettings: _*)
@@ -30,8 +32,7 @@ pomIncludeRepository := { _ => false }
 
 pomExtra := (
   <scm>
-    <url>https://github.com/kro/zeromq-scala-binding</url>
-    <connection>https://kro@github.com/kro/zeromq-scala-binding.git</connection>
+    <url>https://github.com/valotrading/zeromq-scala-binding</url>
   </scm>
   <developers>
     <developer>
@@ -44,4 +45,4 @@ pomExtra := (
 
 licenses := Seq("The Apache Software License, Version 2.0" -> url("http://www.apache.org/licenses/LICENSE-2.0.txt"))
 
-homepage := Some(url("http://jsuereth.com/scala-arm"))
+homepage := Some(url("https://github.com/valotrading/zeromq-scala-binding"))
