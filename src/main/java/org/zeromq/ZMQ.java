@@ -197,25 +197,25 @@ public class ZMQ {
     }
 
     public void setReceiveTimeOut(long timeout) {
-      if (getFullVersion() < makeVersion(3, 0, 0))
+      if (getFullVersion() < makeVersion(2, 2, 0))
         return;
       setLongSockopt(ZeroMQ$.MODULE$.ZMQ_RCVTIMEO(), timeout);
     }
 
     public long getReceiveTimeOut() {
-      if (getFullVersion() < makeVersion(3, 0, 0))
+      if (getFullVersion() < makeVersion(2, 2, 0))
         return -1;
       return getLongSockopt(ZeroMQ$.MODULE$.ZMQ_RCVTIMEO());
     }
 
     public void setSendTimeOut(long timeout) {
-      if (getFullVersion() < makeVersion(3, 0, 0))
+      if (getFullVersion() < makeVersion(2, 2, 0))
         return;
       setLongSockopt(ZeroMQ$.MODULE$.ZMQ_SNDTIMEO(), timeout);
     }
 
     public long getSendTimeOut() {
-      if (getFullVersion() < makeVersion(3, 0, 0))
+      if (getFullVersion() < makeVersion(2, 2, 0))
         return -1;
       return getLongSockopt(ZeroMQ$.MODULE$.ZMQ_SNDTIMEO());
     }
