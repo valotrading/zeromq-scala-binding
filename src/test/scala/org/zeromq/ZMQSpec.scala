@@ -67,6 +67,79 @@ class ZMQSpec extends WordSpec with MustMatchers {
       pub.send("".getBytes, 0)
       pub.close
     }
+    "support setting timeout on receive and send" in {
+      val context = ZMQ.context(1)
+      val rep = context.socket(ZMQ.REP)
+      val url = "inproc://zmq-spec"
+      val timeout = 123
+      rep.setReceiveTimeOut(timeout)
+      rep.setSendTimeOut(timeout)
+
+      rep.bind(url)
+
+      rep.getSendTimeOut must equal(timeout)
+      rep.getReceiveTimeOut must equal(timeout)
+    }
+    "support setting the high water mark" in {
+      val context = ZMQ.context(1)
+      val rep = context.socket(ZMQ.REP)
+      val url = "inproc://zmq-spec"
+      val hwq = 123
+      rep.setHWM(hwq)
+
+      rep.bind(url)
+
+      rep.getHWM() must equal(hwq)
+    }
+    "support setting the rate" in {
+      val context = ZMQ.context(1)
+      val rep = context.socket(ZMQ.REP)
+      val url = "inproc://zmq-spec"
+      val rate = 123
+      rep.setRate(rate)
+
+      rep.bind(url)
+
+      rep.getRate() must equal(rate)
+    }
+    "support setting linger" in {
+      val context = ZMQ.context(1)
+      val rep = context.socket(ZMQ.REP)
+      val url = "inproc://zmq-spec"
+      val linger = 123
+      rep.setLinger(linger)
+
+      rep.bind(url)
+
+      rep.getLinger() must equal(linger)
+    }
+
+    "support setting reconnect ivl" in {
+      val context = ZMQ.context(1)
+      val rep = context.socket(ZMQ.REP)
+      val url = "inproc://zmq-spec"
+      val rivl = 123
+      val rivlMax = 123
+
+      rep.setReconnectIVL(rivl)
+      rep.setReconnectIVLMax(rivlMax)
+      rep.bind(url)
+
+      rep.getReconnectIVL() must equal(rivl)
+      rep.getReconnectIVLMax() must equal(rivlMax)
+    }
+
+    "support setting backlog" in { 
+      val context = ZMQ.context(1)
+      val rep = context.socket(ZMQ.REP)
+      val url = "inproc://zmq-spec"
+      val backlog = 123
+
+      rep.setBacklog(backlog)
+      rep.bind(url)
+
+      rep.getBacklog() must equal(backlog)
+    }
   }
   def connectSubscriber(context: Context) = {
     val socket = context.socket(ZMQ.SUB) 
