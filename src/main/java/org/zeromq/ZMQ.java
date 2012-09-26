@@ -196,28 +196,28 @@ public class ZMQ {
       return getLongSockopt(ZeroMQ$.MODULE$.ZMQ_MCAST_LOOP());
     }
 
-    public void setReceiveTimeOut(long timeout) {
+    public void setReceiveTimeOut(int timeout) {
       if (getFullVersion() < makeVersion(2, 2, 0))
         return;
-      setLongSockopt(ZeroMQ$.MODULE$.ZMQ_RCVTIMEO(), timeout);
+      setIntSockopt(ZeroMQ$.MODULE$.ZMQ_RCVTIMEO(), timeout);
     }
 
-    public long getReceiveTimeOut() {
+    public int getReceiveTimeOut() {
       if (getFullVersion() < makeVersion(2, 2, 0))
         return -1;
-      return getLongSockopt(ZeroMQ$.MODULE$.ZMQ_RCVTIMEO());
+      return getIntSockopt(ZeroMQ$.MODULE$.ZMQ_RCVTIMEO());
     }
 
-    public void setSendTimeOut(long timeout) {
+    public void setSendTimeOut(int timeout) {
       if (getFullVersion() < makeVersion(2, 2, 0))
         return;
-      setLongSockopt(ZeroMQ$.MODULE$.ZMQ_SNDTIMEO(), timeout);
+      setIntSockopt(ZeroMQ$.MODULE$.ZMQ_SNDTIMEO(), timeout);
     }
 
-    public long getSendTimeOut() {
+    public int getSendTimeOut() {
       if (getFullVersion() < makeVersion(2, 2, 0))
         return -1;
-      return getLongSockopt(ZeroMQ$.MODULE$.ZMQ_SNDTIMEO());
+      return getIntSockopt(ZeroMQ$.MODULE$.ZMQ_SNDTIMEO());
     }
 
     public long getSendBufferSize() {
@@ -402,7 +402,7 @@ public class ZMQ {
         log.debug("  Problem closing ZMQ frame");
         raiseZMQException();
       }
-      log.debug("  Message sent: '" + new String(Arrays.copyOfRange(msg, 7, msg.length+7)) + "'");
+      log.debug("  Message sent: '" + new String(Arrays.copyOfRange(msg, 0, msg.length)) + "'");
       return true;
     }
 
@@ -453,10 +453,24 @@ public class ZMQ {
       return value.getLong(0);
     }
 
+    private int getIntSockopt(int option) {
+      Memory value = new Memory(Integer.SIZE / 8);
+      LongByReference length = new LongByReference(Integer.SIZE / 8);
+      zmq.zmq_getsockopt(ptr, option, value, length);
+      return value.getInt(0);
+    }
+
     private void setLongSockopt(int option, long optval) {
       NativeLong length = new NativeLong(Long.SIZE / 8);
       Memory value = new Memory(Long.SIZE / 8);
       value.setLong(0, optval);
+      zmq.zmq_setsockopt(ptr, option, value, length);
+    }
+
+    private void setIntSockopt(int option, int optval) {
+      NativeLong length = new NativeLong(Integer.SIZE / 8);
+      Memory value = new Memory(Integer.SIZE / 8);
+      value.setInt(0, (int)optval);
       zmq.zmq_setsockopt(ptr, option, value, length);
     }
 
