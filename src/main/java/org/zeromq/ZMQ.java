@@ -110,28 +110,28 @@ public class ZMQ {
       return (int) getLongSockopt(ZeroMQ$.MODULE$.ZMQ_TYPE());
     }
 
-    public long getLinger() {
+    public int getLinger() {
       if (getFullVersion() < makeVersion(2, 1, 0))
         return -1;
-      return (int) getLongSockopt(ZeroMQ$.MODULE$.ZMQ_LINGER());
+      return getIntSockopt(ZeroMQ$.MODULE$.ZMQ_LINGER());
     }
 
-    public long getReconnectIVL() {
-      if (getFullVersion() < makeVersion(3, 0, 0))
+    public int getReconnectIVL() {
+      if (getFullVersion() < makeVersion(2, 1, 0))
         return -1;
-      return (int) getLongSockopt(ZeroMQ$.MODULE$.ZMQ_RECONNECT_IVL());
+      return  getIntSockopt(ZeroMQ$.MODULE$.ZMQ_RECONNECT_IVL());
     }
 
-    public long getBacklog() {
-      if (getFullVersion() < makeVersion(3, 0, 0))
+    public int getBacklog() {
+      if (getFullVersion() < makeVersion(2, 1, 0))
         return -1;
-      return (int) getLongSockopt(ZeroMQ$.MODULE$.ZMQ_BACKLOG());
+      return getIntSockopt(ZeroMQ$.MODULE$.ZMQ_BACKLOG());
     }
 
-    public long getReconnectIVLMax() {
-      if (getFullVersion() < makeVersion(3, 0, 0))
+    public int getReconnectIVLMax() {
+      if (getFullVersion() < makeVersion(2, 1, 0))
         return -1;
-      return getLongSockopt(ZeroMQ$.MODULE$.ZMQ_RECONNECT_IVL_MAX());
+      return getIntSockopt(ZeroMQ$.MODULE$.ZMQ_RECONNECT_IVL_MAX());
     }
 
     public long getMaxMsgSize() {
@@ -140,20 +140,20 @@ public class ZMQ {
       return getLongSockopt(ZeroMQ$.MODULE$.ZMQ_MAXMSGSIZE());
     }
 
-    public long getSndHWM() {
+    public int getSndHWM() {
       if (getFullVersion() < makeVersion(3, 0, 0))
         return -1;
-      return getLongSockopt(ZeroMQ$.MODULE$.ZMQ_SNDHWM());
+      return getIntSockopt(ZeroMQ$.MODULE$.ZMQ_SNDHWM());
     }
 
-    public long getRcvHWM() {
+    public int getRcvHWM() {
       if (getFullVersion() < makeVersion(3, 0, 0))
         return -1;
-      return getLongSockopt(ZeroMQ$.MODULE$.ZMQ_RCVHWM());
+      return getIntSockopt(ZeroMQ$.MODULE$.ZMQ_RCVHWM());
     }
 
     public long getHWM() {
-      if (getFullVersion() < makeVersion(3, 0, 0))
+      if (getFullVersion() >= makeVersion(3, 0, 0))
         return -1;
       return getLongSockopt(ZeroMQ$.MODULE$.ZMQ_HWM());
     }
@@ -244,36 +244,35 @@ public class ZMQ {
       return getLongSockopt(ZeroMQ$.MODULE$.ZMQ_EVENTS());
     }
 
-    public void setLinger(long linger) {
+    public void setLinger(int linger) {
       if (getFullVersion() < makeVersion(2, 1, 0))
         return;
 
-      log.debug("Setting linger to " + linger);
-      setLongSockopt(ZeroMQ$.MODULE$.ZMQ_LINGER(), linger);
+      setIntSockopt(ZeroMQ$.MODULE$.ZMQ_LINGER(), linger);
     }
 
-    public void setReconnectIVL(long reconnectIVL) {
-      if (getFullVersion() < makeVersion(3, 0, 0))
+    public void setReconnectIVL(int reconnectIVL) {
+      if (getFullVersion() < makeVersion(2, 1, 0))
         return;
 
       log.debug("Setting reconnectIVL to " + reconnectIVL);
-      setLongSockopt(ZeroMQ$.MODULE$.ZMQ_RECONNECT_IVL(), reconnectIVL);
+      setIntSockopt(ZeroMQ$.MODULE$.ZMQ_RECONNECT_IVL(), reconnectIVL);
     }
 
-    public void setBacklog(long backlog) {
-      if (getFullVersion() < makeVersion(3, 0, 0))
+    public void setBacklog(int backlog) {
+      if (getFullVersion() < makeVersion(2, 1, 0))
         return;
 
       log.debug("Setting backlog to " + backlog);
-      setLongSockopt(ZeroMQ$.MODULE$.ZMQ_BACKLOG(), backlog);
+      setIntSockopt(ZeroMQ$.MODULE$.ZMQ_BACKLOG(), backlog);
     }
 
-    public void setReconnectIVLMax(long reconnectIVLMax) {
-      if (getFullVersion() < makeVersion(3, 0, 0))
+    public void setReconnectIVLMax(int reconnectIVLMax) {
+      if (getFullVersion() < makeVersion(2, 1, 0))
         return;
 
       log.debug("Setting reconnectIVLMax to " + reconnectIVLMax);
-      setLongSockopt(ZeroMQ$.MODULE$.ZMQ_RECONNECT_IVL_MAX(), reconnectIVLMax);
+      setIntSockopt(ZeroMQ$.MODULE$.ZMQ_RECONNECT_IVL_MAX(), reconnectIVLMax);
     }
 
     public void setMaxMsgSize(long maxMsgSize) {
@@ -284,27 +283,26 @@ public class ZMQ {
       setLongSockopt(ZeroMQ$.MODULE$.ZMQ_MAXMSGSIZE(), maxMsgSize);
     }
 
-    public void setSndHWM(long sndHWM) {
+    public void setSndHWM(int sndHWM) {
       if (getFullVersion() < makeVersion(3, 0, 0))
         return;
 
       log.debug("Setting sndHWM to " + sndHWM);
-      setLongSockopt(ZeroMQ$.MODULE$.ZMQ_SNDHWM(), sndHWM);
+      setIntSockopt(ZeroMQ$.MODULE$.ZMQ_SNDHWM(), sndHWM);
     }
 
-    public void setRcvHWM(long rcvHWM) {
+    public void setRcvHWM(int rcvHWM) {
       if (getFullVersion() >= makeVersion(3, 0, 0))
         return;
 
       log.debug("Setting rcvHWM to " + rcvHWM);
-      setLongSockopt(ZeroMQ$.MODULE$.ZMQ_RCVHWM(), rcvHWM);
+      setIntSockopt(ZeroMQ$.MODULE$.ZMQ_RCVHWM(), rcvHWM);
     }
 
     public void setHWM(long hwm) {
       if (getFullVersion() >= makeVersion(3, 0, 0))
         return;
 
-      log.debug("Setting HWM to " + hwm);
       setLongSockopt(ZeroMQ$.MODULE$.ZMQ_HWM(), hwm);
     }
 
@@ -453,18 +451,18 @@ public class ZMQ {
       return value.getLong(0);
     }
 
-    private int getIntSockopt(int option) {
-      Memory value = new Memory(Integer.SIZE / 8);
-      LongByReference length = new LongByReference(Integer.SIZE / 8);
-      zmq.zmq_getsockopt(ptr, option, value, length);
-      return value.getInt(0);
-    }
-
     private void setLongSockopt(int option, long optval) {
       NativeLong length = new NativeLong(Long.SIZE / 8);
       Memory value = new Memory(Long.SIZE / 8);
       value.setLong(0, optval);
       zmq.zmq_setsockopt(ptr, option, value, length);
+    }
+
+    private int getIntSockopt(int option) {
+      Memory value = new Memory(Integer.SIZE / 8);
+      LongByReference length = new LongByReference(Integer.SIZE / 8);
+      zmq.zmq_getsockopt(ptr, option, value, length);
+      return value.getInt(0);
     }
 
     private void setIntSockopt(int option, int optval) {
