@@ -67,6 +67,20 @@ class ZMQSpec extends WordSpec with MustMatchers {
       pub.send("".getBytes, 0)
       pub.close
     }
+    "support setting timeout on receive and send" in {
+      val context = ZMQ.context(1)
+      val rep = context.socket(ZMQ.REP)
+      val url = "inproc://zmq-spec"
+      val timeout = 123
+      rep.setReceiveTimeOut(timeout)
+      rep.setSendTimeOut(timeout)
+
+      rep.bind(url)
+
+      rep.getSendTimeOut must equal(timeout)
+      rep.getReceiveTimeOut must equal(timeout)
+    }
+
   }
   def connectSubscriber(context: Context) = {
     val socket = context.socket(ZMQ.SUB) 
