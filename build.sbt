@@ -12,7 +12,7 @@ libraryDependencies ++= Seq(
   //"ch.qos.logback"   %  "logback-classic" % "1.0.0", // uncomment to see logging output
   "org.slf4j"        %  "slf4j-api"       % "1.6.4",
   "org.scalatest"    %% "scalatest"       % "1.6.1" % "test" //To build with Scala 2.9.2
-  //"org.scalatest"    %% "scalatest"       % "1.9-2.10.0-M7-B1" % "test" //To build with Scala 2.9.2
+  //"org.scalatest"    %% "scalatest"       % "1.9-2.10.0-M7-B1" % "test" //To build with Scala 2.10.0-M7
 )
 
 scalacOptions := Seq("-deprecation", "-unchecked")
