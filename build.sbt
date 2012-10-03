@@ -22,8 +22,6 @@ publishTo <<= version { v: String =>
   else                             Some("releases"  at nexus + "service/local/staging/deploy/maven2")
 }
 
-seq(javadoc.JavadocPlugin.javadocSettings: _*)
-
 publishArtifact in Test := false
 
 sources in (Compile, doc) ~= (_ filter (_ => false))
