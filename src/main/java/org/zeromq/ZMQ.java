@@ -6,8 +6,6 @@ import com.sun.jna.ptr.*;
 import java.util.Arrays;
 import java.util.HashSet;
 import java.util.LinkedList;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 /**
  * Offers an API similar to that of jzmq [1] written by Gonzalo Diethelm.
@@ -15,7 +13,6 @@ import org.slf4j.LoggerFactory;
  * 1. https://github.com/zeromq/jzmq
  */
 public class ZMQ {
-  private static Logger log = LoggerFactory.getLogger(ZMQ.class);
   private static final ZeroMQLibrary zmq = ZeroMQ$.MODULE$.loadLibrary();
   private static final int[] majorVersion = new int[1];
   private static final int[] minorVersion = new int[1];
@@ -248,7 +245,6 @@ public class ZMQ {
       if (getFullVersion() < makeVersion(2, 1, 0))
         return;
 
-      log.debug("Setting linger to " + linger);
       setLongSockopt(ZeroMQ$.MODULE$.ZMQ_LINGER(), linger);
     }
 
@@ -256,7 +252,6 @@ public class ZMQ {
       if (getFullVersion() < makeVersion(3, 0, 0))
         return;
 
-      log.debug("Setting reconnectIVL to " + reconnectIVL);
       setLongSockopt(ZeroMQ$.MODULE$.ZMQ_RECONNECT_IVL(), reconnectIVL);
     }
 
@@ -264,7 +259,6 @@ public class ZMQ {
       if (getFullVersion() < makeVersion(3, 0, 0))
         return;
 
-      log.debug("Setting backlog to " + backlog);
       setLongSockopt(ZeroMQ$.MODULE$.ZMQ_BACKLOG(), backlog);
     }
 
@@ -272,7 +266,6 @@ public class ZMQ {
       if (getFullVersion() < makeVersion(3, 0, 0))
         return;
 
-      log.debug("Setting reconnectIVLMax to " + reconnectIVLMax);
       setLongSockopt(ZeroMQ$.MODULE$.ZMQ_RECONNECT_IVL_MAX(), reconnectIVLMax);
     }
 
@@ -280,7 +273,6 @@ public class ZMQ {
       if (getFullVersion() < makeVersion(3, 0, 0))
         return;
 
-      log.debug("Setting maxMsgSize to " + maxMsgSize);
       setLongSockopt(ZeroMQ$.MODULE$.ZMQ_MAXMSGSIZE(), maxMsgSize);
     }
 
@@ -288,7 +280,6 @@ public class ZMQ {
       if (getFullVersion() < makeVersion(3, 0, 0))
         return;
 
-      log.debug("Setting sndHWM to " + sndHWM);
       setLongSockopt(ZeroMQ$.MODULE$.ZMQ_SNDHWM(), sndHWM);
     }
 
@@ -296,7 +287,6 @@ public class ZMQ {
       if (getFullVersion() >= makeVersion(3, 0, 0))
         return;
 
-      log.debug("Setting rcvHWM to " + rcvHWM);
       setLongSockopt(ZeroMQ$.MODULE$.ZMQ_RCVHWM(), rcvHWM);
     }
 
@@ -304,7 +294,6 @@ public class ZMQ {
       if (getFullVersion() >= makeVersion(3, 0, 0))
         return;
 
-      log.debug("Setting HWM to " + hwm);
       setLongSockopt(ZeroMQ$.MODULE$.ZMQ_HWM(), hwm);
     }
 
@@ -315,32 +304,26 @@ public class ZMQ {
     }
 
     public void setAffinity(long affinity) {
-      log.debug("Setting affinity to " + affinity);
       setLongSockopt(ZeroMQ$.MODULE$.ZMQ_AFFINITY(), affinity);
     }
 
     public void setIdentity(byte[] identity) {
-      log.debug("Setting identity to '" + new String(identity) + "'");
       setBytesSockopt(ZeroMQ$.MODULE$.ZMQ_IDENTITY(), identity);
     }
 
     public void subscribe(byte[] topic) {
-      log.debug("Subscribing to '" + new String(topic) + "'");
       setBytesSockopt(ZeroMQ$.MODULE$.ZMQ_SUBSCRIBE(), topic);
     }
 
     public void unsubscribe(byte[] topic) {
-      log.debug("Unsubscribing from '" + new String(topic) + "'");
       setBytesSockopt(ZeroMQ$.MODULE$.ZMQ_UNSUBSCRIBE(), topic);
     }
 
     public void setRate (long rate) {
-      log.debug("Setting rate to " + rate);
       setLongSockopt(ZeroMQ$.MODULE$.ZMQ_RATE(), rate);
     }
 
     public void setRecoveryInterval(long recovery_ivl) {
-      log.debug("Setting recovery interval to " + recovery_ivl);
       setLongSockopt(ZeroMQ$.MODULE$.ZMQ_RECONNECT_IVL(), recovery_ivl);
     }
 
@@ -348,27 +331,22 @@ public class ZMQ {
       if (getFullVersion() >= makeVersion(3, 0, 0))
         return;
 
-      log.debug("Setting multicast loop to " + mcast_loop);
       setLongSockopt(ZeroMQ$.MODULE$.ZMQ_MCAST_LOOP(), mcast_loop ? 1 : 0);
     }
 
     public void setSendBufferSize(long sndbuf) {
-      log.debug("Setting send buffer size to " + sndbuf);
       setLongSockopt(ZeroMQ$.MODULE$.ZMQ_SNDBUF(), sndbuf);
     }
 
     public void setReceiveBufferSize(long rcvbuf) {
-      log.debug("Setting receive buffer size to " + rcvbuf);
       setLongSockopt(ZeroMQ$.MODULE$.ZMQ_RCVBUF(), rcvbuf);
     }
 
     public void bind(String addr) {
-      log.debug("Binding to " + addr);
       zmq.zmq_bind(ptr, addr);
     }
 
     public void connect(String addr) {
-      log.debug("Connecting to " + addr);
       zmq.zmq_connect(ptr, addr);
     }
 
@@ -379,17 +357,12 @@ public class ZMQ {
        * @return true if successful
        * @throws ZMQException for any problem */
     public boolean send(byte[] msg, int flags) {
-      log.debug("Entering ZMQ.send()");
       zmq_msg_t message = newZmqMessage(msg);
       if (zmq.zmq_send(ptr, message, flags) != 0) { // problem sending
         if (zmq.zmq_errno() == ZeroMQ$.MODULE$.EAGAIN()) {
-          log.debug("  Non-blocking mode was requested and the message cannot be sent at the moment: '" +
-                    new String(Arrays.copyOfRange(msg, 0, msg.length)) + "'");
           if (zmq.zmq_msg_close(message) != 0) {
-            log.debug("  Problem closing ZMQ frame");
             raiseZMQException();
           } else {
-            log.debug("  Frame not sent");
             return false;
           }
         } else {
@@ -399,10 +372,8 @@ public class ZMQ {
         }
       }
       if (zmq.zmq_msg_close(message) != 0) {
-        log.debug("  Problem closing ZMQ frame");
         raiseZMQException();
       }
-      log.debug("  Message sent: '" + new String(Arrays.copyOfRange(msg, 7, msg.length+7)) + "'");
       return true;
     }
 
@@ -411,11 +382,9 @@ public class ZMQ {
        * @return array of bytes containing received message if successful, or null if not
        * @throws ZMQException for any problem */
     public byte[] recv(int flags) {
-      log.debug("Entering ZMQ.recv()");
       zmq_msg_t message = newZmqMessage();
       if (zmq.zmq_recv(ptr, message, flags) != 0) {
         if (zmq.zmq_errno() == ZeroMQ$.MODULE$.EAGAIN()) {
-          log.debug("  Non-blocking mode was requested and no messages are available at the moment.");
           if (zmq.zmq_msg_close(message) != 0) {
             raiseZMQException();
           } else {
@@ -423,7 +392,6 @@ public class ZMQ {
           }
         } else {
           zmq.zmq_msg_close(message);
-          log.debug("  Problem receiving message: '" + message + "'");
           raiseZMQException();
         }
       }
@@ -431,10 +399,8 @@ public class ZMQ {
       int length = zmq.zmq_msg_size(message);
       byte[] dataByteArray = data.getByteArray(0, length);
       if (zmq.zmq_msg_close(message) != 0) {
-        log.debug("  Problem extracting data from message: '" + message + "'");
         raiseZMQException();
       }
-      log.debug("  Message received: '" + new String(dataByteArray) + "'");
       return dataByteArray;
     }
 
@@ -509,7 +475,6 @@ public class ZMQ {
     private void raiseZMQException() {
       int errno = zmq.zmq_errno();
       String reason = zmq.zmq_strerror(errno);
-      log.debug("Throwing ZMQException " + errno + ": " + reason);
       throw new ZMQException(reason, errno);
     }
 
