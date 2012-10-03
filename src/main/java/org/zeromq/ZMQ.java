@@ -15,9 +15,10 @@
  */
 package org.zeromq;
 
-import com.sun.jna.*;
-import com.sun.jna.ptr.*;
-
+import com.sun.jna.Memory;
+import com.sun.jna.NativeLong;
+import com.sun.jna.Pointer;
+import com.sun.jna.ptr.LongByReference;
 import java.util.Arrays;
 import java.util.HashSet;
 import java.util.LinkedList;

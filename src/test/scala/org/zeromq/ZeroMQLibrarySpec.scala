@@ -15,15 +15,13 @@
  */
 package org.zeromq
 
+import com.sun.jna.ptr.LongByReference
+import com.sun.jna.{Memory, NativeLong, Pointer}
 import java.util.concurrent.{Executors, TimeUnit}
-import org.scalatest.BeforeAndAfter
-import org.scalatest.WordSpec
+import org.scalatest.{BeforeAndAfter, WordSpec}
 import org.scalatest.matchers.MustMatchers
 import org.zeromq.ZeroMQ._
 import scala.util.Random
-
-import com.sun.jna._
-import com.sun.jna.ptr._
 
 class ZeroMQLibrarySpec extends WordSpec with MustMatchers with BeforeAndAfter {
   "ZeroMQLibrary" must {

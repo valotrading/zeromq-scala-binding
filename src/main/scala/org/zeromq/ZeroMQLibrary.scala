@@ -15,8 +15,8 @@
  */
 package org.zeromq
 
-import com.sun.jna._
-import com.sun.jna.ptr._
+import com.sun.jna.{Library, Native, NativeLong, Pointer}
+import com.sun.jna.ptr.LongByReference
 import jnr.constants.platform.Errno
 
 object ZeroMQ {

@@ -15,8 +15,8 @@
  */
 package org.zeromq;
 
-import com.sun.jna.*;
-import com.sun.jna.ptr.*;
+import com.sun.jna.Pointer;
+import com.sun.jna.Structure;
 
 public class zmq_msg_t extends Structure {
   public Pointer content;
