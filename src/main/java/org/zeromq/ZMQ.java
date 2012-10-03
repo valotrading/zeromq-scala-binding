@@ -21,8 +21,6 @@ public class ZMQ {
   public static final int NOBLOCK = ZeroMQ$.MODULE$.ZMQ_NOBLOCK();
   public static final int DONTWAIT = ZeroMQ$.MODULE$.ZMQ_NOBLOCK();
   public static final int PAIR = ZeroMQ$.MODULE$.ZMQ_PAIR();
-
-  /** Indicates that a message has multiple frames and this is not the last frame */
   public static final int SNDMORE = ZeroMQ$.MODULE$.ZMQ_SNDMORE();
   public static final int PUB = ZeroMQ$.MODULE$.ZMQ_PUB();
   public static final int SUB = ZeroMQ$.MODULE$.ZMQ_SUB();
@@ -350,12 +348,6 @@ public class ZMQ {
       zmq.zmq_connect(ptr, addr);
     }
 
-      /**
-       * Send a frame in blocking mode; if in non-blocking mode and the frame completes a message, send it
-       * @param flags If set, the SNDMORE flag indicates that additional frames follow to complete the message
-       * @see http://api.zeromq.org/2-1:zmq-send
-       * @return true if successful
-       * @throws ZMQException for any problem */
     public boolean send(byte[] msg, int flags) {
       zmq_msg_t message = newZmqMessage(msg);
       if (zmq.zmq_send(ptr, message, flags) != 0) { // problem sending
@@ -377,10 +369,6 @@ public class ZMQ {
       return true;
     }
 
-      /**
-       * @see http://api.zeromq.org/2-1:zmq-recv
-       * @return array of bytes containing received message if successful, or null if not
-       * @throws ZMQException for any problem */
     public byte[] recv(int flags) {
       zmq_msg_t message = newZmqMessage();
       if (zmq.zmq_recv(ptr, message, flags) != 0) {
@@ -445,7 +433,6 @@ public class ZMQ {
       zmq.zmq_setsockopt(ptr, option, value, length);
     }
 
-    /** @throws ZMQException if a problem was encountered creating a new ZMQ Message */
     private zmq_msg_t newZmqMessage(byte[] msg) {
       zmq_msg_t message = new zmq_msg_t();
       if (msg.length == 0) {
@@ -471,7 +458,6 @@ public class ZMQ {
       return message;
     }
 
-    /** @throws ZMQException with reason, which is looked up from the zmq error number */
     private void raiseZMQException() {
       int errno = zmq.zmq_errno();
       String reason = zmq.zmq_strerror(errno);
