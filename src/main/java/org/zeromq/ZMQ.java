@@ -34,23 +34,23 @@ public class ZMQ {
   private static final int[] minorVersion = new int[1];
   private static final int[] patchVersion = new int[1];
 
-  public static final int NOBLOCK = ZeroMQ$.MODULE$.ZMQ_NOBLOCK();
-  public static final int DONTWAIT = ZeroMQ$.MODULE$.ZMQ_NOBLOCK();
-  public static final int PAIR = ZeroMQ$.MODULE$.ZMQ_PAIR();
-  public static final int SNDMORE = ZeroMQ$.MODULE$.ZMQ_SNDMORE();
-  public static final int PUB = ZeroMQ$.MODULE$.ZMQ_PUB();
-  public static final int SUB = ZeroMQ$.MODULE$.ZMQ_SUB();
-  public static final int REQ = ZeroMQ$.MODULE$.ZMQ_REQ();
-  public static final int REP = ZeroMQ$.MODULE$.ZMQ_REP();
-  public static final int XREQ = ZeroMQ$.MODULE$.ZMQ_DEALER();
-  public static final int XREP = ZeroMQ$.MODULE$.ZMQ_ROUTER();
-  public static final int DEALER = ZeroMQ$.MODULE$.ZMQ_DEALER();
-  public static final int ROUTER = ZeroMQ$.MODULE$.ZMQ_ROUTER();
-  public static final int PULL = ZeroMQ$.MODULE$.ZMQ_PULL();
-  public static final int PUSH = ZeroMQ$.MODULE$.ZMQ_PUSH();
-  public static final int STREAMER = ZeroMQ$.MODULE$.ZMQ_STREAMER();
+  public static final int NOBLOCK   = ZeroMQ$.MODULE$.ZMQ_NOBLOCK();
+  public static final int DONTWAIT  = ZeroMQ$.MODULE$.ZMQ_NOBLOCK();
+  public static final int PAIR      = ZeroMQ$.MODULE$.ZMQ_PAIR();
+  public static final int SNDMORE   = ZeroMQ$.MODULE$.ZMQ_SNDMORE();
+  public static final int PUB       = ZeroMQ$.MODULE$.ZMQ_PUB();
+  public static final int SUB       = ZeroMQ$.MODULE$.ZMQ_SUB();
+  public static final int REQ       = ZeroMQ$.MODULE$.ZMQ_REQ();
+  public static final int REP       = ZeroMQ$.MODULE$.ZMQ_REP();
+  public static final int XREQ      = ZeroMQ$.MODULE$.ZMQ_DEALER();
+  public static final int XREP      = ZeroMQ$.MODULE$.ZMQ_ROUTER();
+  public static final int DEALER    = ZeroMQ$.MODULE$.ZMQ_DEALER();
+  public static final int ROUTER    = ZeroMQ$.MODULE$.ZMQ_ROUTER();
+  public static final int PULL      = ZeroMQ$.MODULE$.ZMQ_PULL();
+  public static final int PUSH      = ZeroMQ$.MODULE$.ZMQ_PUSH();
+  public static final int STREAMER  = ZeroMQ$.MODULE$.ZMQ_STREAMER();
   public static final int FORWARDER = ZeroMQ$.MODULE$.ZMQ_FORWARDER();
-  public static final int QUEUE = ZeroMQ$.MODULE$.ZMQ_QUEUE();
+  public static final int QUEUE     = ZeroMQ$.MODULE$.ZMQ_QUEUE();
 
   static {
     zmq.zmq_version(majorVersion, minorVersion, patchVersion);
