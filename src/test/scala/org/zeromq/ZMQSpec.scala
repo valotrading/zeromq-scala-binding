@@ -15,64 +15,66 @@
  */
 package org.zeromq
 
-import org.scalatest.WordSpec
-import org.scalatest.matchers.MustMatchers
 import org.zeromq.ZMQ._
+import org.zeromq.ZeroMQ._
 
-class ZMQSpec extends WordSpec with MustMatchers {
+class ZMQSpec extends AbstractZeroMQSpec {
   "ZMQ" must {
     "support Socket#getType" in {
-      val context = ZMQ.context(1)
-      val sub = context.socket(ZMQ.SUB)
-      sub.getType must equal(ZMQ.SUB)
-      sub.close 
+      val context = ZMQ.context()
+      val sub = context.socket(SUB)
+      sub.getType must equal(SUB)
+      sub.close
+      context.destroy()
     }
     "support pub-sub connection pattern" in {
-      val context = ZMQ.context(1)
+      val context = ZMQ.context()
       val (pub, sub, poller) = (
-        context.socket(ZMQ.PUB), 
-        context.socket(ZMQ.SUB), 
-        context.poller
-      )
-      pub.bind("inproc://zmq-spec")
-      sub.connect("inproc://zmq-spec")
-      sub.subscribe(Array.empty)
+        context.socket(PUB),
+        context.socket(SUB),
+        context.poller)
+      pub.bind(endpoint)
+      sub.connect(endpoint)
+      sub.subscribe(subscribeAll)
       poller.register(sub)
-      pub.send(outgoingMessage.getBytes, 0)
+      pub.send(dataBytes, ZMQ_DONTWAIT)
       poller.poll must equal(1)
       poller.pollin(0) must equal(true)
-      val incomingMessage = sub.recv(0)
-      incomingMessage must equal(outgoingMessage.getBytes)
+      sub.recv(0) must equal(dataBytes)
       sub.close
       pub.close
+      context.destroy()
     }
     "support polling of multiple sockets" in {
-      val context = ZMQ.context(1)
-      val (pub, poller) = (context.socket(ZMQ.PUB), context.poller)
-      pub.bind("inproc://zmq-spec")
-      val (sub_x, sub_y) = (connectSubscriber(context), connectSubscriber(context))
+      val context = ZMQ.context()
+      val (pub, poller) = (context.socket(PUB), context.poller)
+      pub.bind(endpoint)
+      val (sub_x, sub_y) = (connectTestSubscriber(context), connectTestSubscriber(context))
       poller.register(sub_x)
       poller.register(sub_y)
-      pub.send(outgoingMessage.getBytes, 0)
+      pub.send(dataBytes, 0)
       poller.poll must equal(2)
       poller.pollin(0) must equal(true)
       poller.pollin(1) must equal(true)
       sub_x.close
       sub_y.close
       pub.close
+      context.destroy()
     }
     "support sending of zero-length messages" in {
-      val context = ZMQ.context(1)
-      val pub = context.socket(ZMQ.PUB)
-      pub.send("".getBytes, 0)
+      val context = ZMQ.context()
+      val pub = context.socket(PUB)
+      pub.bind(endpoint)
+      pub.send("".getBytes, 0) must be(true)
       pub.close
+      context.destroy()
+    }
+    "set socket linger" in {
+      val context = ZMQ.context()
+      val socket = context.socket(PUB)
+      socket.setLinger(1000)
+      socket.close
+      context.destroy()
     }
   }
-  def connectSubscriber(context: Context) = {
-    val socket = context.socket(ZMQ.SUB) 
-    socket.connect("inproc://zmq-spec")
-    socket.subscribe(Array.empty)
-    socket
-  }
-  lazy val outgoingMessage = "hello"
 }

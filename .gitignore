@@ -1,3 +1,9 @@
-/project
+/project/project/
+/project/plugins
+/project/target
 /target
 tags
+.DS_Store
+/*/.DS_Store
+.idea/
+.idea_modules/
