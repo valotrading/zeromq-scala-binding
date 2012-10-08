@@ -5,11 +5,9 @@ name := "zeromq-scala-binding"
 version := "0.0.8-SNAPSHOT"
 
 libraryDependencies ++= Seq(
-  "net.java.dev.jna" %  "jna"             % "3.0.9",
-  "com.github.jnr"   %  "jnr-constants"   % "0.8.2",
-  //"ch.qos.logback"   %  "logback-classic" % "1.0.0", // uncomment to see logging output
-  "org.slf4j"        %  "slf4j-api"       % "1.6.4",
-  "org.scalatest"    %% "scalatest"       % "1.6.1" % "test"
+  "net.java.dev.jna" %  "jna"           % "3.0.9",
+  "com.github.jnr"   %  "jnr-constants" % "0.8.2",
+  "org.scalatest"    %% "scalatest"     % "1.6.1" % "test"
 )
 
 scalacOptions := Seq("-deprecation", "-unchecked")
@@ -21,8 +19,6 @@ publishTo <<= version { v: String =>
   if (v.trim.endsWith("SNAPSHOT")) Some("snapshots" at nexus + "content/repositories/snapshots")
   else                             Some("releases"  at nexus + "service/local/staging/deploy/maven2")
 }
-
-seq(javadoc.JavadocPlugin.javadocSettings: _*)
 
 publishArtifact in Test := false
 

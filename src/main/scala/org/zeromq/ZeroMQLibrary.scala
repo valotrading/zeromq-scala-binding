@@ -15,76 +15,84 @@
  */
 package org.zeromq
 
-import com.sun.jna._
-import com.sun.jna.ptr._
+import com.sun.jna.{Library, Native, NativeLong, Pointer}
+import com.sun.jna.ptr.LongByReference
 import jnr.constants.platform.Errno
 
 object ZeroMQ {
+
   /** Socket types */
-  val ZMQ_PAIR = 0
-  val ZMQ_PUB = 1
-  val ZMQ_SUB = 2
-  val ZMQ_REQ = 3
-  val ZMQ_REP = 4
+  val ZMQ_PAIR   = 0
+  val ZMQ_PUB    = 1
+  val ZMQ_SUB    = 2
+  val ZMQ_REQ    = 3
+  val ZMQ_REP    = 4
   val ZMQ_DEALER = 5
   val ZMQ_ROUTER = 6
-  val ZMQ_PULL = 7
-  val ZMQ_PUSH = 8
-  val ZMQ_XPUB = 9
-  val ZMQ_XSUB = 10
+  val ZMQ_PULL   = 7
+  val ZMQ_PUSH   = 8
+  val ZMQ_XPUB   = 9
+  val ZMQ_XSUB   = 10
+
   /** Send / receive options */
   val ZMQ_NOBLOCK = 1
   val ZMQ_SNDMORE = 2 
+
   /** Socket options */
-  val ZMQ_HWM = 1
-  val ZMQ_SWAP = 3
-  val ZMQ_AFFINITY = 4
-  val ZMQ_IDENTITY = 5
-  val ZMQ_SUBSCRIBE = 6
-  val ZMQ_UNSUBSCRIBE = 7
-  val ZMQ_RATE = 8
-  val ZMQ_RECOVERY_IVL = 9
-  val ZMQ_MCAST_LOOP = 10
-  val ZMQ_SNDBUF = 11
-  val ZMQ_RCVBUF = 12
-  val ZMQ_RCVMORE = 13
-  val ZMQ_FD = 14
-  val ZMQ_EVENTS = 15
-  val ZMQ_TYPE = 16
-  val ZMQ_LINGER = 17
-  val ZMQ_RECONNECT_IVL = 18
-  val ZMQ_BACKLOG = 19
+  val ZMQ_HWM               = 1
+  val ZMQ_SWAP              = 3
+  val ZMQ_AFFINITY          = 4
+  val ZMQ_IDENTITY          = 5
+  val ZMQ_SUBSCRIBE         = 6
+  val ZMQ_UNSUBSCRIBE       = 7
+  val ZMQ_RATE              = 8
+  val ZMQ_RECOVERY_IVL      = 9
+  val ZMQ_MCAST_LOOP        = 10
+  val ZMQ_SNDBUF            = 11
+  val ZMQ_RCVBUF            = 12
+  val ZMQ_RCVMORE           = 13
+  val ZMQ_FD                = 14
+  val ZMQ_EVENTS            = 15
+  val ZMQ_TYPE              = 16
+  val ZMQ_LINGER            = 17
+  val ZMQ_RECONNECT_IVL     = 18
+  val ZMQ_BACKLOG           = 19
   val ZMQ_RECONNECT_IVL_MAX = 21
-  val ZMQ_MAXMSGSIZE = 22;
-  val ZMQ_SNDHWM = 23;
-  val ZMQ_RCVHWM = 24;
-  val ZMQ_MULTICAST_HOPS = 25;
-  val ZMQ_RCVTIMEO = 27;
-  val ZMQ_SNDTIMEO = 28;
+  val ZMQ_MAXMSGSIZE        = 22
+  val ZMQ_SNDHWM            = 23
+  val ZMQ_RCVHWM            = 24
+  val ZMQ_MULTICAST_HOPS    = 25
+  val ZMQ_RCVTIMEO          = 27
+  val ZMQ_SNDTIMEO          = 28
+
   /** Built-in devices */
-  val ZMQ_STREAMER = 1
+  val ZMQ_STREAMER  = 1
   val ZMQ_FORWARDER = 2
-  val ZMQ_QUEUE = 3
+  val ZMQ_QUEUE     = 3
+
   /** Unix errors */
   val EINVAL = Errno.EINVAL.intValue
   val EAGAIN = Errno.EAGAIN.intValue
+
   /** ZMQ errors */
   val ZMQ_HAUSNUMERO = 156384712
-  val EFSM = ZMQ_HAUSNUMERO + 51
+  val EFSM           = ZMQ_HAUSNUMERO + 51
   val ENOCOMPATPROTO = ZMQ_HAUSNUMERO + 52
-  val ETERM = ZMQ_HAUSNUMERO + 53
+  val ETERM          = ZMQ_HAUSNUMERO + 53
+
   /** ZMQ message definition */
   val ZMQ_MAX_VSM_SIZE = 30
-  val ZMQ_DELIMITER = 31
-  val ZMQ_VSM = 32
-  val ZMQ_MSG_MORE = 1
-  val ZMQ_MSG_SHARED = 128
-  val ZMQ_MSG_MASK = 129
+  val ZMQ_DELIMITER    = 31
+  val ZMQ_VSM          = 32
+  val ZMQ_MSG_MORE     = 1
+  val ZMQ_MSG_SHARED   = 128
+  val ZMQ_MSG_MASK     = 129
+
   /** IO multiplexing */
-  val ZMQ_POLLIN: Short = 1
+  val ZMQ_POLLIN:  Short = 1
   val ZMQ_POLLOUT: Short = 2
-  val ZMQ_POLLERR: Short = 4 
-  /** Helper for loading the ZeroMQ library */
+  val ZMQ_POLLERR: Short = 4
+
   def loadLibrary: ZeroMQLibrary = {
     Native.loadLibrary("zmq", classOf[ZeroMQLibrary]).asInstanceOf[ZeroMQLibrary]  
   }
