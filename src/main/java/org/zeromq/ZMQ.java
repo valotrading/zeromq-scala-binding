@@ -101,11 +101,16 @@ public class ZMQ {
   public static class Context {
     protected Pointer ptr;
 
+
+    protected Context(int ioThreads) {
+      ptr = (getFullVersion() < makeVersion(3, 2, 0)) ? zmq.zmq_init(ioThreads) : zmq.zmq_ctx_new();
+    }
+
     /**
-     * Returns zero if successful, otherwise returns -1.
+     * Creates a new Context with the default number of threads.
      */
-    public int destroy() {
-      return (getFullVersion() < makeVersion(3, 2, 0)) ? zmq.zmq_term(ptr) : zmq.zmq_ctx_destroy(ptr);
+    protected Context() {
+      ptr = (getFullVersion() < makeVersion(3, 2, 0)) ? zmq.zmq_init(1) : zmq.zmq_ctx_new();
     }
 
     public Socket socket(int type) {
@@ -120,15 +125,11 @@ public class ZMQ {
       return new Poller(this, size);
     }
 
-    protected Context(int ioThreads) {
-      ptr = (getFullVersion() < makeVersion(3, 2, 0)) ? zmq.zmq_init(ioThreads) : zmq.zmq_ctx_new();
-    }
-
     /**
-     * Creates a new Context with the default number of threads.
+     * Returns zero if successful, otherwise returns -1.
      */
-    protected Context() {
-      ptr = (getFullVersion() < makeVersion(3, 2, 0)) ? zmq.zmq_init(1) : zmq.zmq_ctx_new();
+    public int destroy() {
+      return (getFullVersion() < makeVersion(3, 2, 0)) ? zmq.zmq_term(ptr) : zmq.zmq_ctx_destroy(ptr);
     }
   }
 
@@ -195,31 +196,12 @@ public class ZMQ {
     public long getRecoveryInterval() {
       return getLongSockopt(ZeroMQ$.MODULE$.ZMQ_RECOVERY_IVL());
     }
-
-    public boolean hasMulticastLoop() {
-      return getFullVersion() >= makeVersion(3, 0, 0) && getLongSockopt(ZeroMQ$.MODULE$.ZMQ_MCAST_LOOP()) != 0;
-    }
-
-    public void setMulticastHops(long mcast_hops) {
-      setLongSockopt(ZeroMQ$.MODULE$.ZMQ_MCAST_LOOP(), mcast_hops);
-    }
-
     public long getMulticastHops() {
       return (getFullVersion() < makeVersion(3, 0, 0)) ? -1 : getLongSockopt(ZeroMQ$.MODULE$.ZMQ_MCAST_LOOP());
     }
 
-    public void setReceiveTimeOut(long timeout) {
-      if (getFullVersion() < makeVersion(3, 0, 0)) return;
-      setLongSockopt(ZeroMQ$.MODULE$.ZMQ_RCVTIMEO(), timeout);
-    }
-
     public long getReceiveTimeOut() {
       return (getFullVersion() < makeVersion(3, 0, 0)) ? -1 : getLongSockopt(ZeroMQ$.MODULE$.ZMQ_RCVTIMEO());
-    }
-
-    public void setSendTimeOut(long timeout) {
-      if (getFullVersion() < makeVersion(3, 0, 0)) return;
-      setLongSockopt(ZeroMQ$.MODULE$.ZMQ_SNDTIMEO(), timeout);
     }
 
     public long getSendTimeOut() {
@@ -234,16 +216,34 @@ public class ZMQ {
       return getLongSockopt(ZeroMQ$.MODULE$.ZMQ_RCVBUF());
     }
 
-    public boolean hasReceiveMore() {
-      return getLongSockopt(ZeroMQ$.MODULE$.ZMQ_RCVMORE()) != 0;
-    }
-
     public long getFD() {
       return (getFullVersion() < makeVersion(2, 1, 0)) ? -1 : getLongSockopt(ZeroMQ$.MODULE$.ZMQ_FD());
     }
 
     public long getEvents() {
       return (getFullVersion() < makeVersion(2, 1, 0)) ? -1 : getLongSockopt(ZeroMQ$.MODULE$.ZMQ_EVENTS());
+    }
+
+    public boolean hasMulticastLoop() {
+      return getFullVersion() >= makeVersion(3, 0, 0) && getLongSockopt(ZeroMQ$.MODULE$.ZMQ_MCAST_LOOP()) != 0;
+    }
+
+    public boolean hasReceiveMore() {
+      return getLongSockopt(ZeroMQ$.MODULE$.ZMQ_RCVMORE()) != 0;
+    }
+
+    public void setMulticastHops(long mcast_hops) {
+      setLongSockopt(ZeroMQ$.MODULE$.ZMQ_MCAST_LOOP(), mcast_hops);
+    }
+
+    public void setReceiveTimeOut(long timeout) {
+      if (getFullVersion() < makeVersion(3, 0, 0)) return;
+      setLongSockopt(ZeroMQ$.MODULE$.ZMQ_RCVTIMEO(), timeout);
+    }
+
+    public void setSendTimeOut(long timeout) {
+      if (getFullVersion() < makeVersion(3, 0, 0)) return;
+      setLongSockopt(ZeroMQ$.MODULE$.ZMQ_SNDTIMEO(), timeout);
     }
 
     public void setLinger(long linger) {
