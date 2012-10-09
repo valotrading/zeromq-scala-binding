@@ -1,5 +1,5 @@
 /*
- * Copyright 2011 the original author or authors.
+ * Copyright 2011 - 2012 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,64 +15,139 @@
  */
 package org.zeromq
 
-import org.scalatest.WordSpec
-import org.scalatest.matchers.MustMatchers
 import org.zeromq.ZMQ._
+import org.zeromq.ZeroMQ._
 
-class ZMQSpec extends WordSpec with MustMatchers {
+class ZMQSpec extends AbstractZeroMQSpec {
   "ZMQ" must {
+    "be successfully created and destroyed" in {
+      val context = new Context(1)
+      context must not be (null)
+      context.poller(1) must not be (null)
+      val s = context.socket(PULL)
+      s must not be (null)
+      s.close
+      context.destroy() must be(0)
+    }
     "support Socket#getType" in {
-      val context = ZMQ.context(1)
-      val sub = context.socket(ZMQ.SUB)
-      sub.getType must equal(ZMQ.SUB)
-      sub.close 
+      val context = new Context()
+      val sub = context.socket(SUB)
+      sub.getType must equal(SUB)
+      sub.close
+      context.destroy()
     }
     "support pub-sub connection pattern" in {
-      val context = ZMQ.context(1)
+      val context = new Context()
       val (pub, sub, poller) = (
-        context.socket(ZMQ.PUB), 
-        context.socket(ZMQ.SUB), 
-        context.poller
-      )
-      pub.bind("inproc://zmq-spec")
-      sub.connect("inproc://zmq-spec")
-      sub.subscribe(Array.empty)
-      poller.register(sub)
-      pub.send(outgoingMessage.getBytes, 0)
+        context.socket(PUB),
+        context.socket(SUB),
+        context.poller)
+      pub.bind(endpoint) must be(0)
+      sub.connect(endpoint) must be(0)
+      sub.subscribe(subscribeAll) must be(0)
+      poller.register(sub) must be(0)
+      pub.send(dataBytes, ZMQ_DONTWAIT)
       poller.poll must equal(1)
       poller.pollin(0) must equal(true)
-      val incomingMessage = sub.recv(0)
-      incomingMessage must equal(outgoingMessage.getBytes)
+      sub.recv(0) must equal(dataBytes)
       sub.close
       pub.close
+      context.destroy()
     }
     "support polling of multiple sockets" in {
-      val context = ZMQ.context(1)
-      val (pub, poller) = (context.socket(ZMQ.PUB), context.poller)
-      pub.bind("inproc://zmq-spec")
-      val (sub_x, sub_y) = (connectSubscriber(context), connectSubscriber(context))
+      val context = new Context()
+      val (pub, poller) = (context.socket(PUB), context.poller)
+      pub.bind(endpoint)
+      val (sub_x, sub_y) = (connectTestSubscriber(context), connectTestSubscriber(context))
       poller.register(sub_x)
       poller.register(sub_y)
-      pub.send(outgoingMessage.getBytes, 0)
+      pub.send(dataBytes, 0)
       poller.poll must equal(2)
       poller.pollin(0) must equal(true)
       poller.pollin(1) must equal(true)
       sub_x.close
       sub_y.close
       pub.close
+      context.destroy()
     }
     "support sending of zero-length messages" in {
-      val context = ZMQ.context(1)
-      val pub = context.socket(ZMQ.PUB)
-      pub.send("".getBytes, 0)
+      val context = new Context()
+      val pub = context.socket(PUB)
+      pub.bind(endpoint)
+      pub.send("".getBytes, 0) must be(true)
       pub.close
+      context.destroy()
     }
+    "support socket linger" in {
+      val context = new Context()
+      val socket = context.socket(PUB)
+      socket.setLinger(1000)
+      // FIXME fails: socket.getLinger must be(0)
+      socket.close
+      context.destroy()
+    }
+    "support socket backlog" in {
+      val context = new Context()
+      val socket = context.socket(REP)
+      socket.setBacklog(200)
+      socket.getBacklog must be(100)
+      socket.close
+      socket.connect("inproc://reqrep")
+      socket.getBacklog must be(0)
+      socket.close
+      context.destroy()
+    }
+    "support socket reconnect interval" in {
+      val context = new Context()
+      val socket = context.socket(REP)
+      socket.setReconnectIVL(101)
+      socket.getReconnectIVL must be(100)
+      socket.close
+      socket.connect("inproc://reqrep")
+      socket.getReconnectIVL must be(0)
+      socket.close
+      context.destroy()
+    }
+    /* TODO test coverage:
+    getReconnectIVLMax
+    getMaxMsgSize
+    getSndHWM
+    getRcvHWM
+    getHWM
+    getSwap
+    getAffinity
+    getIdentity
+    getRate
+    getRecoveryInterval
+    getMulticastHops
+    getReceiveTimeOut
+    getSendTimeOut
+    getSendBufferSize
+    getReceiveBufferSize
+    getFD
+    getEvents
+
+    hasMulticastLoop
+    hasReceiveMore
+
+    setReceiveTimeOut
+    setMulticastHops
+    setReceiveTimeOut
+    setSendTimeOut  
+    setReconnectIVL  
+    setReconnectIVLMax 
+    setMaxMsgSize 
+    setSndHWM 
+    setRcvHWM  
+    setHWM(long hwm)  
+    setSwap 
+    setAffinity
+    setIdentity
+    setRate 
+    setRecoveryInterval 
+    setMulticastLoop 
+    setSendBufferSize 
+    setReceiveBufferSize
+    */
   }
-  def connectSubscriber(context: Context) = {
-    val socket = context.socket(ZMQ.SUB) 
-    socket.connect("inproc://zmq-spec")
-    socket.subscribe(Array.empty)
-    socket
-  }
-  lazy val outgoingMessage = "hello"
 }

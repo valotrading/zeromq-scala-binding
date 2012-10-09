@@ -1,5 +1,5 @@
 /*
- * Copyright 2011 the original author or authors.
+ * Copyright 2011 - 2012 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -25,7 +25,7 @@ import java.util.LinkedList;
 
 /**
  * Offers an API similar to that of jzmq [1] written by Gonzalo Diethelm.
- *
+ * <p/>
  * 1. https://github.com/zeromq/jzmq
  */
 public class ZMQ {
@@ -35,7 +35,7 @@ public class ZMQ {
   private static final int[] patchVersion = new int[1];
 
   public static final int NOBLOCK   = ZeroMQ$.MODULE$.ZMQ_NOBLOCK();
-  public static final int DONTWAIT  = ZeroMQ$.MODULE$.ZMQ_NOBLOCK();
+  public static final int DONTWAIT  = ZeroMQ$.MODULE$.ZMQ_DONTWAIT();
   public static final int PAIR      = ZeroMQ$.MODULE$.ZMQ_PAIR();
   public static final int SNDMORE   = ZeroMQ$.MODULE$.ZMQ_SNDMORE();
   public static final int PUB       = ZeroMQ$.MODULE$.ZMQ_PUB();
@@ -54,6 +54,10 @@ public class ZMQ {
 
   static {
     zmq.zmq_version(majorVersion, minorVersion, patchVersion);
+  }
+
+  public static byte[] intToByteArray(int value) {
+    return new byte[]{(byte) (value >>> 24), (byte) (value >>> 16), (byte) (value >>> 8), (byte) value};
   }
 
   public static int getMajorVersion() {
@@ -84,10 +88,29 @@ public class ZMQ {
     return new Context(ioThreads);
   }
 
+  /**
+   * Creates a new Context with the default thread count of 1.
+   */
+  public static Context context() {
+    return new Context();
+  }
+
+  /**
+   * Represents a ZeroMQ Context
+   */
   public static class Context {
     protected Pointer ptr;
 
-    public void term () {
+
+    protected Context(int ioThreads) {
+      ptr = (getFullVersion() < makeVersion(3, 2, 0)) ? zmq.zmq_init(ioThreads) : zmq.zmq_ctx_new();
+    }
+
+    /**
+     * Creates a new Context with the default number of threads.
+     */
+    protected Context() {
+      ptr = (getFullVersion() < makeVersion(3, 2, 0)) ? zmq.zmq_init(1) : zmq.zmq_ctx_new();
     }
 
     public Socket socket(int type) {
@@ -102,8 +125,11 @@ public class ZMQ {
       return new Poller(this, size);
     }
 
-    protected Context (int ioThreads) {
-      ptr = zmq.zmq_init(ioThreads);
+    /**
+     * Returns zero if successful, otherwise returns -1.
+     */
+    public int destroy() {
+      return (getFullVersion() < makeVersion(3, 2, 0)) ? zmq.zmq_term(ptr) : zmq.zmq_ctx_destroy(ptr);
     }
   }
 
@@ -116,295 +142,232 @@ public class ZMQ {
     }
 
     public int getType() {
-      if (getFullVersion() < makeVersion(2, 1, 0))
-        return -1;
-      return (int) getLongSockopt(ZeroMQ$.MODULE$.ZMQ_TYPE());
-    }
-
-    public long getLinger() {
-      if (getFullVersion() < makeVersion(2, 1, 0))
-        return -1;
-      return (int) getLongSockopt(ZeroMQ$.MODULE$.ZMQ_LINGER());
-    }
-
-    public long getReconnectIVL() {
-      if (getFullVersion() < makeVersion(3, 0, 0))
-        return -1;
-      return (int) getLongSockopt(ZeroMQ$.MODULE$.ZMQ_RECONNECT_IVL());
-    }
-
-    public long getBacklog() {
-      if (getFullVersion() < makeVersion(3, 0, 0))
-        return -1;
-      return (int) getLongSockopt(ZeroMQ$.MODULE$.ZMQ_BACKLOG());
-    }
-
-    public long getReconnectIVLMax() {
-      if (getFullVersion() < makeVersion(3, 0, 0))
-        return -1;
-      return getLongSockopt(ZeroMQ$.MODULE$.ZMQ_RECONNECT_IVL_MAX());
-    }
-
-    public long getMaxMsgSize() {
-      if (getFullVersion() < makeVersion(3, 0, 0))
-        return -1;
-      return getLongSockopt(ZeroMQ$.MODULE$.ZMQ_MAXMSGSIZE());
-    }
-
-    public long getSndHWM() {
-      if (getFullVersion() < makeVersion(3, 0, 0))
-        return -1;
-      return getLongSockopt(ZeroMQ$.MODULE$.ZMQ_SNDHWM());
-    }
-
-    public long getRcvHWM() {
-      if (getFullVersion() < makeVersion(3, 0, 0))
-        return -1;
-      return getLongSockopt(ZeroMQ$.MODULE$.ZMQ_RCVHWM());
-    }
-
-    public long getHWM() {
-      if (getFullVersion() < makeVersion(3, 0, 0))
-        return -1;
-      return getLongSockopt(ZeroMQ$.MODULE$.ZMQ_HWM());
-    }
-
-    public long getSwap() {
-      if (getFullVersion() < makeVersion(3, 0, 0))
-        return -1;
-      return getLongSockopt(ZeroMQ$.MODULE$.ZMQ_SWAP());
-    }
-
-    public long getAffinity() {
-      return getLongSockopt(ZeroMQ$.MODULE$.ZMQ_AFFINITY());
-    }
-
-    public byte[] getIdentity() {
-      return getBytesSockopt(ZeroMQ$.MODULE$.ZMQ_IDENTITY());
-    }
-
-    public long getRate() {
-      return getLongSockopt(ZeroMQ$.MODULE$.ZMQ_RATE());
-    }
-
-    public long getRecoveryInterval() {
-      return getLongSockopt(ZeroMQ$.MODULE$.ZMQ_RECOVERY_IVL());
-    }
-
-    public boolean hasMulticastLoop() {
-      if (getFullVersion() < makeVersion(3, 0, 0))
-        return false;
-      return getLongSockopt(ZeroMQ$.MODULE$.ZMQ_MCAST_LOOP()) != 0;
-    }
-
-    public void setMulticastHops(long mcast_hops) {
-      setLongSockopt(ZeroMQ$.MODULE$.ZMQ_MCAST_LOOP(), mcast_hops);
-    }
-
-    public long getMulticastHops() {
-      if (getFullVersion() < makeVersion(3, 0, 0))
-        return -1;
-      return getLongSockopt(ZeroMQ$.MODULE$.ZMQ_MCAST_LOOP());
-    }
-
-    public void setReceiveTimeOut(long timeout) {
-      if (getFullVersion() < makeVersion(3, 0, 0))
-        return;
-      setLongSockopt(ZeroMQ$.MODULE$.ZMQ_RCVTIMEO(), timeout);
-    }
-
-    public long getReceiveTimeOut() {
-      if (getFullVersion() < makeVersion(3, 0, 0))
-        return -1;
-      return getLongSockopt(ZeroMQ$.MODULE$.ZMQ_RCVTIMEO());
-    }
-
-    public void setSendTimeOut(long timeout) {
-      if (getFullVersion() < makeVersion(3, 0, 0))
-        return;
-      setLongSockopt(ZeroMQ$.MODULE$.ZMQ_SNDTIMEO(), timeout);
-    }
-
-    public long getSendTimeOut() {
-      if (getFullVersion() < makeVersion(3, 0, 0))
-        return -1;
-      return getLongSockopt(ZeroMQ$.MODULE$.ZMQ_SNDTIMEO());
-    }
-
-    public long getSendBufferSize() {
-      return getLongSockopt(ZeroMQ$.MODULE$.ZMQ_SNDBUF());
-    }
-
-    public long getReceiveBufferSize() {
-      return getLongSockopt(ZeroMQ$.MODULE$.ZMQ_RCVBUF());
-    }
-
-    public boolean hasReceiveMore() {
-      return getLongSockopt(ZeroMQ$.MODULE$.ZMQ_RCVMORE()) != 0;
-    }
-
-    public long getFD() {
-      if (getFullVersion() < makeVersion(2, 1, 0))
-        return -1;
-      return getLongSockopt(ZeroMQ$.MODULE$.ZMQ_FD());
-    }
-
-    public long getEvents() {
-      if (getFullVersion() < makeVersion(2, 1, 0))
-        return -1;
-      return getLongSockopt(ZeroMQ$.MODULE$.ZMQ_EVENTS());
+      return (getFullVersion() < makeVersion(2, 1, 0)) ? -1 : (int) getLongSockopt(ZeroMQ$.MODULE$.ZMQ_TYPE());
     }
 
     public void setLinger(long linger) {
-      if (getFullVersion() < makeVersion(2, 1, 0))
-        return;
-
-      setLongSockopt(ZeroMQ$.MODULE$.ZMQ_LINGER(), linger);
+      if (getFullVersion() >= makeVersion(2, 1, 0)) setLongSockopt(ZeroMQ$.MODULE$.ZMQ_LINGER(), linger);
     }
 
-    public void setReconnectIVL(long reconnectIVL) {
-      if (getFullVersion() < makeVersion(3, 0, 0))
-        return;
-
-      setLongSockopt(ZeroMQ$.MODULE$.ZMQ_RECONNECT_IVL(), reconnectIVL);
+    public long getLinger() {
+      return (getFullVersion() >= makeVersion(2, 1, 0)) ? (int) getLongSockopt(ZeroMQ$.MODULE$.ZMQ_LINGER()) : -1;
     }
 
     public void setBacklog(long backlog) {
-      if (getFullVersion() < makeVersion(3, 0, 0))
-        return;
+      if (getFullVersion() >= makeVersion(3, 0, 0)) setLongSockopt(ZeroMQ$.MODULE$.ZMQ_BACKLOG(), backlog);
+    }
 
-      setLongSockopt(ZeroMQ$.MODULE$.ZMQ_BACKLOG(), backlog);
+    public long getBacklog() {
+      return (getFullVersion() >= makeVersion(3, 0, 0)) ? (int) getLongSockopt(ZeroMQ$.MODULE$.ZMQ_BACKLOG()) : -1;
+    }
+
+    public void setReconnectIVL(long reconnectIVL) {
+      if (getFullVersion() >= makeVersion(3, 0, 0)) setLongSockopt(ZeroMQ$.MODULE$.ZMQ_RECONNECT_IVL(), reconnectIVL);
+    }
+
+    public long getReconnectIVL() {
+      return (getFullVersion() >= makeVersion(3, 0, 0)) ? (int) getLongSockopt(ZeroMQ$.MODULE$.ZMQ_RECONNECT_IVL()) : -1;
     }
 
     public void setReconnectIVLMax(long reconnectIVLMax) {
-      if (getFullVersion() < makeVersion(3, 0, 0))
-        return;
+      if (getFullVersion() >= makeVersion(3, 0, 0)) setLongSockopt(ZeroMQ$.MODULE$.ZMQ_RECONNECT_IVL_MAX(), reconnectIVLMax);
+    }
 
-      setLongSockopt(ZeroMQ$.MODULE$.ZMQ_RECONNECT_IVL_MAX(), reconnectIVLMax);
+    public long getReconnectIVLMax() {
+      return (getFullVersion() >= makeVersion(3, 0, 0)) ? getLongSockopt(ZeroMQ$.MODULE$.ZMQ_RECONNECT_IVL_MAX()) : -1;
     }
 
     public void setMaxMsgSize(long maxMsgSize) {
-      if (getFullVersion() < makeVersion(3, 0, 0))
-        return;
-
-      setLongSockopt(ZeroMQ$.MODULE$.ZMQ_MAXMSGSIZE(), maxMsgSize);
+      if (getFullVersion() >= makeVersion(3, 0, 0)) setLongSockopt(ZeroMQ$.MODULE$.ZMQ_MAXMSGSIZE(), maxMsgSize);
     }
 
-    public void setSndHWM(long sndHWM) {
-      if (getFullVersion() < makeVersion(3, 0, 0))
-        return;
-
-      setLongSockopt(ZeroMQ$.MODULE$.ZMQ_SNDHWM(), sndHWM);
-    }
-
-    public void setRcvHWM(long rcvHWM) {
-      if (getFullVersion() >= makeVersion(3, 0, 0))
-        return;
-
-      setLongSockopt(ZeroMQ$.MODULE$.ZMQ_RCVHWM(), rcvHWM);
+    public long getMaxMsgSize() {
+      return (getFullVersion() >= makeVersion(3, 0, 0)) ? getLongSockopt(ZeroMQ$.MODULE$.ZMQ_MAXMSGSIZE()) : -1;
     }
 
     public void setHWM(long hwm) {
-      if (getFullVersion() >= makeVersion(3, 0, 0))
-        return;
-
-      setLongSockopt(ZeroMQ$.MODULE$.ZMQ_HWM(), hwm);
+      if (getFullVersion() < makeVersion(3, 0, 0)) setLongSockopt(ZeroMQ$.MODULE$.ZMQ_HWM(), hwm);
+      else {
+        setSndHWM(hwm);
+        setRcvHWM(hwm);
+      }
     }
 
+    public long getHWM() {
+      return (getFullVersion() < makeVersion(3, 0, 0)) ? getLongSockopt(ZeroMQ$.MODULE$.ZMQ_HWM()) : -1;
+    }
+
+    public void setSndHWM(long sndHWM) {
+      if (getFullVersion() >= makeVersion(3, 0, 0)) setLongSockopt(ZeroMQ$.MODULE$.ZMQ_SNDHWM(), sndHWM);
+    }
+
+    public long getSndHWM() {
+      return (getFullVersion() >= makeVersion(3, 0, 0)) ? getLongSockopt(ZeroMQ$.MODULE$.ZMQ_SNDHWM()) : -1;
+    }
+
+    public void setRcvHWM(long rcvHWM) {
+      if (getFullVersion() >= makeVersion(3, 0, 0)) setLongSockopt(ZeroMQ$.MODULE$.ZMQ_RCVHWM(), rcvHWM);
+    }
+
+    public long getRcvHWM() {
+      return (getFullVersion() >= makeVersion(3, 0, 0)) ? getLongSockopt(ZeroMQ$.MODULE$.ZMQ_RCVHWM()) : -1;
+    }
+
+
     public void setSwap(long swap) {
-      if (getFullVersion() >= makeVersion(3, 0, 0))
-        return;
-      setLongSockopt(ZeroMQ$.MODULE$.ZMQ_SWAP(), swap);
+      if (getFullVersion() < makeVersion(3, 0, 0)) setLongSockopt(ZeroMQ$.MODULE$.ZMQ_SWAP(), swap);
+    }
+
+    public long getSwap() {
+      return (getFullVersion() < makeVersion(3, 0, 0)) ? getLongSockopt(ZeroMQ$.MODULE$.ZMQ_SWAP()) : -1;
     }
 
     public void setAffinity(long affinity) {
       setLongSockopt(ZeroMQ$.MODULE$.ZMQ_AFFINITY(), affinity);
     }
 
+    public long getAffinity() {
+      return getLongSockopt(ZeroMQ$.MODULE$.ZMQ_AFFINITY());
+    }
+
     public void setIdentity(byte[] identity) {
       setBytesSockopt(ZeroMQ$.MODULE$.ZMQ_IDENTITY(), identity);
     }
 
-    public void subscribe(byte[] topic) {
-      setBytesSockopt(ZeroMQ$.MODULE$.ZMQ_SUBSCRIBE(), topic);
-    }
-
-    public void unsubscribe(byte[] topic) {
-      setBytesSockopt(ZeroMQ$.MODULE$.ZMQ_UNSUBSCRIBE(), topic);
+    public byte[] getIdentity() {
+      return getBytesSockopt(ZeroMQ$.MODULE$.ZMQ_IDENTITY());
     }
 
     public void setRate (long rate) {
       setLongSockopt(ZeroMQ$.MODULE$.ZMQ_RATE(), rate);
     }
 
+    public long getRate() {
+      return getLongSockopt(ZeroMQ$.MODULE$.ZMQ_RATE());
+    }
+
     public void setRecoveryInterval(long recovery_ivl) {
       setLongSockopt(ZeroMQ$.MODULE$.ZMQ_RECONNECT_IVL(), recovery_ivl);
     }
 
-    public void setMulticastLoop(boolean mcast_loop) {
-      if (getFullVersion() >= makeVersion(3, 0, 0))
-        return;
+    public long getRecoveryInterval() {
+      return getLongSockopt(ZeroMQ$.MODULE$.ZMQ_RECOVERY_IVL());
+    }
 
-      setLongSockopt(ZeroMQ$.MODULE$.ZMQ_MCAST_LOOP(), mcast_loop ? 1 : 0);
+    public void setMulticastHops(long mcast_hops) {
+      if (getFullVersion() >= makeVersion(3, 0, 0)) setLongSockopt(ZeroMQ$.MODULE$.ZMQ_MCAST_LOOP(), mcast_hops);
+    }
+
+    public long getMulticastHops() {
+      return (getFullVersion() < makeVersion(3, 0, 0)) ? -1 : getLongSockopt(ZeroMQ$.MODULE$.ZMQ_MCAST_LOOP());
+    }
+
+    public void setReceiveTimeOut(long timeout) {
+      if (getFullVersion() >= makeVersion(2, 2, 0)) setLongSockopt(ZeroMQ$.MODULE$.ZMQ_RCVTIMEO(), timeout);
+    }
+
+    public long getReceiveTimeOut() {
+      return (getFullVersion() < makeVersion(2, 2, 0)) ? -1 : getLongSockopt(ZeroMQ$.MODULE$.ZMQ_RCVTIMEO());
+    }
+
+    public void setSendTimeOut(long timeout) {
+      if (getFullVersion() >= makeVersion(2, 2, 0)) setLongSockopt(ZeroMQ$.MODULE$.ZMQ_SNDTIMEO(), timeout);
+    }
+
+    public long getSendTimeOut() {
+      return (getFullVersion() < makeVersion(2, 2, 0)) ? -1 : getLongSockopt(ZeroMQ$.MODULE$.ZMQ_SNDTIMEO());
     }
 
     public void setSendBufferSize(long sndbuf) {
       setLongSockopt(ZeroMQ$.MODULE$.ZMQ_SNDBUF(), sndbuf);
     }
 
+    public long getSendBufferSize() {
+      return getLongSockopt(ZeroMQ$.MODULE$.ZMQ_SNDBUF());
+    }
+
     public void setReceiveBufferSize(long rcvbuf) {
       setLongSockopt(ZeroMQ$.MODULE$.ZMQ_RCVBUF(), rcvbuf);
     }
 
-    public void bind(String addr) {
-      zmq.zmq_bind(ptr, addr);
+    public long getReceiveBufferSize() {
+      return getLongSockopt(ZeroMQ$.MODULE$.ZMQ_RCVBUF());
     }
 
-    public void connect(String addr) {
-      zmq.zmq_connect(ptr, addr);
+    public long getFD() {
+      return (getFullVersion() < makeVersion(2, 1, 0)) ? -1 : getLongSockopt(ZeroMQ$.MODULE$.ZMQ_FD());
+    }
+
+    public long getEvents() {
+      return (getFullVersion() < makeVersion(2, 1, 0)) ? -1 : getLongSockopt(ZeroMQ$.MODULE$.ZMQ_EVENTS());
+    }
+
+    public void setMulticastLoop(boolean mcast_loop) {
+      if (getFullVersion() < makeVersion(3, 0, 0)) setLongSockopt(ZeroMQ$.MODULE$.ZMQ_MCAST_LOOP(), mcast_loop ? 1 : 0);
+    }
+
+    public boolean hasMulticastLoop() {
+      return getFullVersion() >= makeVersion(3, 0, 0) && getLongSockopt(ZeroMQ$.MODULE$.ZMQ_MCAST_LOOP()) != 0;
+    }
+
+    public boolean hasReceiveMore() {
+      return getLongSockopt(ZeroMQ$.MODULE$.ZMQ_RCVMORE()) != 0;
+    }
+
+    public int subscribe(byte[] topic) {
+      return setBytesSockopt(ZeroMQ$.MODULE$.ZMQ_SUBSCRIBE(), topic);
+    }
+
+    public int unsubscribe(byte[] topic) {
+      return setBytesSockopt(ZeroMQ$.MODULE$.ZMQ_UNSUBSCRIBE(), topic);
+    }
+
+    public int bind(String addr) {
+        return zmq.zmq_bind(ptr, addr);
+    }
+
+    public int connect(String addr) {
+        return zmq.zmq_connect(ptr, addr);
     }
 
     public boolean send(byte[] msg, int flags) {
       zmq_msg_t message = newZmqMessage(msg);
-      if (zmq.zmq_send(ptr, message, flags) != 0) { // problem sending
+
+      if ((getFullVersion() == makeVersion(3, 2, 0) && zmq.zmq_msg_send(message, ptr, flags) == -1) ||
+          (getFullVersion() < makeVersion(3, 2, 0) && zmq.zmq_send(ptr, message, flags) != 0)) {
         if (zmq.zmq_errno() == ZeroMQ$.MODULE$.EAGAIN()) {
-          if (zmq.zmq_msg_close(message) != 0) {
-            raiseZMQException();
-          } else {
-            return false;
-          }
+          if (zmq.zmq_msg_close(message) != 0) raiseZMQException();
+          else return false;
         } else {
           zmq.zmq_msg_close(message);
           raiseZMQException();
           return false;
         }
       }
-      if (zmq.zmq_msg_close(message) != 0) {
-        raiseZMQException();
-      }
+
+      if (zmq.zmq_msg_close(message) != 0) raiseZMQException();
       return true;
     }
 
     public byte[] recv(int flags) {
       zmq_msg_t message = newZmqMessage();
-      if (zmq.zmq_recv(ptr, message, flags) != 0) {
+
+      if ((getFullVersion() == makeVersion(3, 2, 0) && zmq.zmq_msg_recv(message, ptr, flags) == -1) ||
+          (getFullVersion() < makeVersion(3, 2, 0) && zmq.zmq_recv(ptr, message, flags) != 0)) {
         if (zmq.zmq_errno() == ZeroMQ$.MODULE$.EAGAIN()) {
-          if (zmq.zmq_msg_close(message) != 0) {
-            raiseZMQException();
-          } else {
-            return null;
-          }
+          if (zmq.zmq_msg_close(message) != 0) raiseZMQException();
+          else return null;
         } else {
           zmq.zmq_msg_close(message);
           raiseZMQException();
         }
       }
+
       Pointer data = zmq.zmq_msg_data(message);
       int length = zmq.zmq_msg_size(message);
       byte[] dataByteArray = data.getByteArray(0, length);
-      if (zmq.zmq_msg_close(message) != 0) {
-        raiseZMQException();
-      }
+
+      if (zmq.zmq_msg_close(message) != 0) raiseZMQException();
       return dataByteArray;
     }
 
@@ -412,22 +375,21 @@ public class ZMQ {
       ptr = zmq.zmq_socket(context.ptr, type);
     }
 
-    @Override protected void finalize() {
+    @Override
+    protected void finalize() {
       close();
     }
 
     private long getLongSockopt(int option) {
       Memory value = new Memory(Long.SIZE / 8);
-      LongByReference length = new LongByReference(Long.SIZE / 8);
-      zmq.zmq_getsockopt(ptr, option, value, length);
+      zmq.zmq_getsockopt(ptr, option, value, new LongByReference(Long.SIZE / 8));
       return value.getLong(0);
     }
 
-    private void setLongSockopt(int option, long optval) {
-      NativeLong length = new NativeLong(Long.SIZE / 8);
+    private int setLongSockopt(int option, long optval) {
       Memory value = new Memory(Long.SIZE / 8);
       value.setLong(0, optval);
-      zmq.zmq_setsockopt(ptr, option, value, length);
+      return zmq.zmq_setsockopt(ptr, option, value, new NativeLong(Long.SIZE / 8));
     }
 
     private byte[] getBytesSockopt(int option) {
@@ -437,47 +399,39 @@ public class ZMQ {
       return value.getByteArray(0, (int) length.getValue());
     }
 
-    private void setBytesSockopt(int option, byte[] optval) {
-      NativeLong length = new NativeLong(optval.length);
-      Pointer value = null;
+    private int setBytesSockopt(int option, byte[] optval) {
+      Pointer value;
       if (optval.length > 0) {
         value = new Memory(optval.length);
         value.write(0, optval, 0, optval.length);
-      } else {
-        value = Pointer.NULL;
-      }
-      zmq.zmq_setsockopt(ptr, option, value, length);
+      } else value = Pointer.NULL;
+
+      return zmq.zmq_setsockopt(ptr, option, value, new NativeLong(optval.length));
     }
 
     private zmq_msg_t newZmqMessage(byte[] msg) {
       zmq_msg_t message = new zmq_msg_t();
       if (msg.length == 0) {
-        if (zmq.zmq_msg_init_size(message, new NativeLong(msg.length)) != 0) {
-          raiseZMQException();
-        }
+        if (zmq.zmq_msg_init_size(message, new NativeLong(msg.length)) != 0) raiseZMQException();
       } else {
         Memory mem = new Memory(msg.length);
         mem.write(0, msg, 0, msg.length);
-        if (zmq.zmq_msg_init_data(message, mem, new NativeLong(msg.length), messageDataBuffer, mem) == 0) {
+        if (zmq.zmq_msg_init_data(message, mem, new NativeLong(msg.length), messageDataBuffer, mem) == 0)
           messageDataBuffer.add(mem);
-        } else {
-          raiseZMQException();
-        }
+        else raiseZMQException();
       }
       return message;
     }
 
     private zmq_msg_t newZmqMessage() {
       zmq_msg_t message = new zmq_msg_t();
-      if (zmq.zmq_msg_init(message) != 0)
-        raiseZMQException();
+      if (zmq.zmq_msg_init(message) != 0) raiseZMQException();
       return message;
     }
 
     private void raiseZMQException() {
       int errno = zmq.zmq_errno();
-      String reason = zmq.zmq_strerror(errno);
-      throw new ZMQException(reason, errno);
+      throw new ZMQException(zmq.zmq_strerror(errno), errno);
     }
 
     private class MessageDataBuffer implements zmq_free_fn {
@@ -517,9 +471,8 @@ public class ZMQ {
 
     public int register(Socket socket, int numEvents) {
       int pos = -1;
-      if (!freeSlots.isEmpty()) {
-        pos = freeSlots.remove();
-      } else {
+      if (!freeSlots.isEmpty()) pos = freeSlots.remove();
+      else {
         if (nextEventIndex >= maxEventCount) {
           int newMaxEventCount = maxEventCount + SIZE_INCREMENT;
           sockets = Arrays.copyOf(sockets, newMaxEventCount);
@@ -536,12 +489,11 @@ public class ZMQ {
     }
 
     public void unregister(Socket socket) {
-      for (int index = 0; index < nextEventIndex; index++) {
+      for (int index = 0; index < nextEventIndex; index++)
         if (sockets[index] == socket) {
           unregisterSocketAtIndex(index);
           break;
         }
-      }
     }
 
     private void unregisterSocketAtIndex(int index) {
@@ -553,10 +505,7 @@ public class ZMQ {
     }
 
     public Socket getSocket(int index) {
-      if (index < 0 || index >= nextEventIndex) {
-          return null;
-      }
-      return sockets[index];
+      return (index < 0 || index >= nextEventIndex) ? null : sockets[index];
     }
 
     public long getTimeout() {
@@ -577,41 +526,37 @@ public class ZMQ {
 
     public long poll() {
       long timeout = -1;
-      if (this.timeout != UNINITIALIZED_TIMEOUT) {
-        timeout = this.timeout;
-      }
+      if (this.timeout != UNINITIALIZED_TIMEOUT) timeout = this.timeout;
       return poll(timeout);
     }
 
     public long poll(long timeout) {
       int pollItemCount = 0;
-      for (int i = 0; i < nextEventIndex; i++) {
-        revents[i] = 0;
-      }
-      if (curEventCount == 0)
-        return 0;
+      for (int i = 0; i < nextEventIndex; i++) revents[i] = 0;
+
+      if (curEventCount == 0) return 0;
+
       zmq_pollitem_t[] items = (zmq_pollitem_t[]) new zmq_pollitem_t().toArray(curEventCount);
-      for (int i = 0; i < pollItemCount; i++) {
-        items[i] = new zmq_pollitem_t();
-      }
+
+      for (int i = 0; i < pollItemCount; i++) items[i] = new zmq_pollitem_t();
+
       for (int socketIndex = 0; socketIndex < sockets.length; socketIndex++) {
-        if (sockets[socketIndex] == null) {
-          continue;
-        }
+        if (sockets[socketIndex] == null) continue;
+
         items[pollItemCount].socket = sockets[socketIndex].ptr;
         items[pollItemCount].fd = 0;
         items[pollItemCount].events = events[socketIndex];
         items[pollItemCount].revents = 0;
         pollItemCount++;
       }
-      if (pollItemCount != curEventCount)
-        return 0;
+
+      if (pollItemCount != curEventCount) return 0;
+
       pollItemCount = 0;
+      // waits for milliseconds, not microseconds
       int result = zmq.zmq_poll(items, curEventCount, new NativeLong(timeout));
       for (int socketIndex = 0; socketIndex < sockets.length; socketIndex++) {
-        if (sockets[socketIndex] == null) {
-          continue;
-        }
+        if (sockets[socketIndex] == null) continue;
         revents[socketIndex] = items[pollItemCount].revents;
         pollItemCount++;
       }
@@ -642,11 +587,8 @@ public class ZMQ {
       this.freeSlots = new LinkedList<Integer>();
     }
 
-    private boolean poll_mask (int index, int mask) {
-      if (mask <= 0 || index < 0 || index >= nextEventIndex) {
-        return false;
-      }
-      return (revents[index] & mask) > 0;
+    private boolean poll_mask(int index, int mask) {
+      return !(mask <= 0 || index < 0 || index >= nextEventIndex) && (revents[index] & mask) > 0;
     }
   }
 }
