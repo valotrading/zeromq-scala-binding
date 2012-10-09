@@ -42,10 +42,10 @@ class ZMQSpec extends AbstractZeroMQSpec {
         context.socket(PUB),
         context.socket(SUB),
         context.poller)
-      pub.bind(endpoint) must be (0)
-      sub.connect(endpoint) must be (0)
-      sub.subscribe(subscribeAll) must be (0)
-      poller.register(sub) must be (0)
+      pub.bind(endpoint) must be(0)
+      sub.connect(endpoint) must be(0)
+      sub.subscribe(subscribeAll) must be(0)
+      poller.register(sub) must be(0)
       pub.send(dataBytes, ZMQ_DONTWAIT)
       poller.poll must equal(1)
       poller.pollin(0) must equal(true)
@@ -82,7 +82,7 @@ class ZMQSpec extends AbstractZeroMQSpec {
       val context = new Context()
       val socket = context.socket(PUB)
       socket.setLinger(1000)
-      // TODO fails: socket.getLinger must be(0)
+      // FIXME fails: socket.getLinger must be(0)
       socket.close
       context.destroy()
     }
