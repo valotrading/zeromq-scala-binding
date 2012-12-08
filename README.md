@@ -18,3 +18,24 @@ resolvers += "Sonatype (releases)" at "https://oss.sonatype.org/content/reposito
 
 libraryDependencies += "org.zeromq" %% "zeromq-scala-binding" % "0.0.8"
 ````
+
+## Configure for GPG signed artefacts
+
+When publishing a package to OSS Sonatype, you may sign the artefacts by adding
+the following lines to `project/plugins.sbt`:
+
+````
+resolvers += Resolver.url("sbt-plugin-release", new URL("http://scalasbt.artifactoryonline.com/scalasbt/sbt-plugin-releases")) (Resolver.ivyStylePatterns)
+
+addSbtPlugin("com.typesafe.sbt" % "sbt-pgp" % "0.7")
+````
+
+Also, you need create a file containing your Sonatype credentials
+`~/.sbt/sonatype.sbt`:
+
+````
+credentials += Credentials("Sonatype Nexus Repository Manager",
+                           "oss.sonatype.org",
+                           "your-sonatype-username",
+                           "your-sonatype-password")
+````
