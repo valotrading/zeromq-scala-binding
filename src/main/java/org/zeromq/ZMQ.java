@@ -561,9 +561,9 @@ public class ZMQ {
                     if (sockets[socketIndex] != null) {
                         final zmq_pollitem_t item = items[itemIndex];
                         item.socket = sockets[socketIndex].ptr;
-                        item.fd = 0; // Why not sockets[socketIndex].getFD()?
+                        item.fd = 0; // We've already set socket, no need to set fd
                         item.events = events[socketIndex];
-                        item.revents = 0; // Why 0 and not revents[socketIndex]?
+                        item.revents = 0; // Clear, as specced: http://api.zeromq.org/2-1:zmq-poll
                         ++itemIndex;
                     }
                 }
