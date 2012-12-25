@@ -16,15 +16,12 @@
 package org.zeromq;
 
 public class ZMQException extends RuntimeException {
-  private int errorCode = 0;
+  private final int errorCode;
 
-  public ZMQException(String message, int errorCode) {
+  public ZMQException(final String message, final int errorCode) {
     super(message);
-
     this.errorCode = errorCode;
   }
 
-  public int getErrorCode() {
-    return errorCode;
-  }
+  public final int getErrorCode() { return errorCode; }
 }

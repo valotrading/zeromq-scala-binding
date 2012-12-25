@@ -93,9 +93,8 @@ object ZeroMQ {
   val ZMQ_POLLOUT: Short = 2
   val ZMQ_POLLERR: Short = 4
 
-  def loadLibrary: ZeroMQLibrary = {
-    Native.loadLibrary("zmq", classOf[ZeroMQLibrary]).asInstanceOf[ZeroMQLibrary]  
-  }
+  def loadLibrary: ZeroMQLibrary =
+    Native.loadLibrary("zmq", classOf[ZeroMQLibrary]).asInstanceOf[ZeroMQLibrary]
 }
 
 trait ZeroMQLibrary extends Library {
