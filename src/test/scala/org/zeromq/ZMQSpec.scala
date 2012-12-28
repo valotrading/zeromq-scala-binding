@@ -25,47 +25,41 @@ class ZMQSpec extends WordSpec with MustMatchers {
       val context = ZMQ.context(1)
       val sub = context.socket(ZMQ.SUB)
       sub.getType must equal(ZMQ.SUB)
-      sub.close 
+      sub.close()
     }
     "support pub-sub connection pattern" in {
       val context = ZMQ.context(1)
-      val (pub, sub, poller) = (
-        context.socket(ZMQ.PUB), 
-        context.socket(ZMQ.SUB), 
-        context.poller
-      )
+      val (pub, sub, poller) = (context.socket(ZMQ.PUB),  context.socket(ZMQ.SUB),  context.poller)
       pub.bind("inproc://zmq-spec")
       sub.connect("inproc://zmq-spec")
       sub.subscribe(Array.empty)
       poller.register(sub)
-      pub.send(outgoingMessage.getBytes, 0)
+      pub.send(outgoingMessage, 0)
       poller.poll must equal(1)
       poller.pollin(0) must equal(true)
       val incomingMessage = sub.recv(0)
-      incomingMessage must equal(outgoingMessage.getBytes)
-      sub.close
-      pub.close
+      incomingMessage must equal(outgoingMessage)
+      sub.close()
+      pub.close()
     }
     "support polling of multiple sockets" in {
       val context = ZMQ.context(1)
       val (pub, poller) = (context.socket(ZMQ.PUB), context.poller)
       pub.bind("inproc://zmq-spec")
-      val (sub_x, sub_y) = (connectSubscriber(context), connectSubscriber(context))
-      poller.register(sub_x)
-      poller.register(sub_y)
-      pub.send(outgoingMessage.getBytes, 0)
-      poller.poll must equal(2)
-      poller.pollin(0) must equal(true)
-      poller.pollin(1) must equal(true)
-      sub_x.close
-      sub_y.close
-      pub.close
+      val subs = 1 to 100 map { _ => connectSubscriber(context) }
+      subs foreach poller.register
+      pub.send(outgoingMessage, 0)
+      poller.poll must equal(subs.size)
+      subs.indices foreach { i => poller.pollin(i) must be(true) }
+      subs foreach { _.recv(ZMQ.NOBLOCK) must equal(outgoingMessage) }
+      subs foreach { _.close() }
+      pub.close()
     }
     "support sending of zero-length messages" in {
       val context = ZMQ.context(1)
       val pub = context.socket(ZMQ.PUB)
-      pub.send("".getBytes, 0)
-      pub.close
+      pub.send(Array.empty, 0)
+      pub.close()
     }
     "support setting timeout on receive and send" in {
       val context = ZMQ.context(1)
@@ -79,6 +73,7 @@ class ZMQSpec extends WordSpec with MustMatchers {
 
       rep.getSendTimeOut must equal(timeout)
       rep.getReceiveTimeOut must equal(timeout)
+      rep.close()
     }
     "support setting the high water mark" in {
       val context = ZMQ.context(1)
@@ -90,6 +85,7 @@ class ZMQSpec extends WordSpec with MustMatchers {
       rep.bind(url)
 
       rep.getHWM() must equal(hwq)
+      rep.close()
     }
     "support setting the rate" in {
       val context = ZMQ.context(1)
@@ -101,6 +97,7 @@ class ZMQSpec extends WordSpec with MustMatchers {
       rep.bind(url)
 
       rep.getRate() must equal(rate)
+      rep.close()
     }
     "support setting linger" in {
       val context = ZMQ.context(1)
@@ -112,6 +109,7 @@ class ZMQSpec extends WordSpec with MustMatchers {
       rep.bind(url)
 
       rep.getLinger() must equal(linger)
+      rep.close()
     }
 
     "support setting reconnect ivl" in {
@@ -127,6 +125,7 @@ class ZMQSpec extends WordSpec with MustMatchers {
 
       rep.getReconnectIVL() must equal(rivl)
       rep.getReconnectIVLMax() must equal(rivlMax)
+      rep.close()
     }
 
     "support setting backlog" in { 
@@ -139,6 +138,7 @@ class ZMQSpec extends WordSpec with MustMatchers {
       rep.bind(url)
 
       rep.getBacklog() must equal(backlog)
+      rep.close()
     }
   }
   def connectSubscriber(context: Context) = {
@@ -147,5 +147,5 @@ class ZMQSpec extends WordSpec with MustMatchers {
     socket.subscribe(Array.empty)
     socket
   }
-  lazy val outgoingMessage = "hello"
+  lazy val outgoingMessage = "hello".getBytes("UTF-8")
 }
