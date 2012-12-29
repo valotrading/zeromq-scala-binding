@@ -26,6 +26,7 @@ import java.util.Arrays
 import java.lang.{ Long ⇒ JLong, Integer ⇒ JInteger }
 import scala.beans.BeanProperty
 import scala.annotation.tailrec
+import concurrent.duration.{Duration, FiniteDuration}
 
 object ZeroMQ {
 
@@ -605,7 +606,7 @@ object ZMQ {
   }
 
   class Poller (context: ZMQ.Context, size: Int) {
-    @BeanProperty var timeout: Long = -1
+    @BeanProperty var timeout: FiniteDuration = Duration(-1, "ms")
     private var nextEventIndex: Int = 0
     private var maxEventCount: Int = size
     private var curEventCount: Int = 0
@@ -664,7 +665,7 @@ object ZMQ {
 
     def poll: Long = poll(this.timeout)
 
-    def poll(timeout: Long): Long = {
+    def poll(timeout: FiniteDuration): Long = {
       Arrays.fill(revents, 0, nextEventIndex, 0: Short)
       curEventCount match {
         case 0 ⇒ 0
@@ -694,7 +695,11 @@ object ZMQ {
           val items = new zmq_pollitem_t().toArray(expectedEvents).asInstanceOf[Array[zmq_pollitem_t]]
           withItems(items, init = true) match {
             case `expectedEvents` ⇒
-              val result: Int = zmq.zmq_poll(items, expectedEvents, new NativeLong(timeout))
+              val result: Int = zmq.zmq_poll(
+                items,
+                expectedEvents,
+                new NativeLong(if (versionAtleast300) timeout.toMicros else timeout.toMillis)
+              )
               withItems(items, init = false)
               result
             case _ ⇒ 0 // Bail out
