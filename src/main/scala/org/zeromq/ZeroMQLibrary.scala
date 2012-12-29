@@ -233,14 +233,11 @@ object ZMQ {
    */
   class Socket(context: ZMQ.Context, `type`: Int) {
     import ZeroMQ._
-    private final class MessageDataBuffer extends zmq_free_fn {
-      private final val buffer = new java.util.HashSet[Pointer]
-      def add(data: Pointer): Unit = buffer.add(data)
-      override def invoke(data: Pointer, memory: Pointer): Unit = buffer.remove(memory)
-    }
 
     private[zeromq] final val ptr: Pointer = zmq.zmq_socket(context.ptr, `type`)
-    private final val messageDataBuffer = new MessageDataBuffer
+    private final val messageDataBuffer = new java.util.HashSet[Pointer] with zmq_free_fn {
+      override def invoke(data: Pointer, memory: Pointer): Unit = remove(memory)
+    }
 
     /**
      * Closes this 0MQ Socket
@@ -531,7 +528,7 @@ object ZMQ {
      * @return true if send succeeded, false if NOBLOCK requested and EAGAIN returned by send call
      */
     def send(msg: Array[Byte], flags: Int): Boolean = {
-      val message: zmq_msg_t = newZmqMessage(msg)
+      val message = newZmqMessage(msg)
       zmq.zmq_send(ptr, message, flags) match {
         case 0 ⇒ if (zmq.zmq_msg_close(message) != 0) raiseZMQException else true
         case EAGAIN ⇒ if (zmq.zmq_msg_close(message) != 0) raiseZMQException else false
@@ -547,7 +544,7 @@ object ZMQ {
      * @return null if NOBLOCK was requested and EAGAIN was returned by recv call, else the bytes received
      */
     def recv(flags: Int): Array[Byte] = {
-      val message: zmq_msg_t = newZmqMessage
+      val message = newZmqMessage
       zmq.zmq_recv(ptr, message, flags) match {
         case 0 ⇒
           val dataByteArray: Array[Byte] = zmq.zmq_msg_data(message).getByteArray(0, zmq.zmq_msg_size(message))
@@ -562,33 +559,33 @@ object ZMQ {
     override protected def finalize: Unit = close()
 
     private def getLongSockopt(option: Int): Long = {
-      val value: Memory = new Memory(JLong.SIZE / 8)
-      val length: LongByReference = new LongByReference(JLong.SIZE / 8)
+      val value = new Memory(JLong.SIZE / 8)
+      val length = new LongByReference(JLong.SIZE / 8)
       zmq.zmq_getsockopt(ptr, option, value, length)
       value.getLong(0)
     }
 
     private def setLongSockopt(option: Int, optval: Long): Unit = {
-      val value: Memory = new Memory(JLong.SIZE / 8)
+      val value = new Memory(JLong.SIZE / 8)
       value.setLong(0, optval)
       zmq.zmq_setsockopt(ptr, option, value, new NativeLong(JLong.SIZE / 8))
     }
 
     private def getIntSockopt(option: Int): Int = {
-      val value: Memory = new Memory(JInteger.SIZE / 8)
+      val value = new Memory(JInteger.SIZE / 8)
       zmq.zmq_getsockopt(ptr, option, value, new LongByReference(JInteger.SIZE / 8))
       value.getInt(0)
     }
 
     private def setIntSockopt(option: Int, optval: Int): Unit = {
-      val value: Memory = new Memory(JInteger.SIZE / 8)
+      val value = new Memory(JInteger.SIZE / 8)
       value.setInt(0, optval)
       zmq.zmq_setsockopt(ptr, option, value, new NativeLong(JInteger.SIZE / 8))
     }
 
     private def getBytesSockopt(option: Int): Array[Byte] = {
-      val value: Memory = new Memory(1024)
-      val length: LongByReference = new LongByReference(1024)
+      val value = new Memory(1024)
+      val length = new LongByReference(1024)
       zmq.zmq_getsockopt(ptr, option, value, length)
       value.getByteArray(0, length.getValue.asInstanceOf[Int])
     }
@@ -604,11 +601,11 @@ object ZMQ {
         new NativeLong(optval.length))
 
     private def newZmqMessage(msg: Array[Byte]): zmq_msg_t = {
-      val message: zmq_msg_t = new zmq_msg_t
+      val message = new zmq_msg_t
       msg.length match {
         case 0 ⇒ if (zmq.zmq_msg_init_size(message, new NativeLong(0)) != 0) raiseZMQException
         case len ⇒
-          val mem: Memory = new Memory(len)
+          val mem = new Memory(len)
           mem.write(0, msg, 0, len)
           if (zmq.zmq_msg_init_data(message, mem, new NativeLong(len), messageDataBuffer, mem) != 0) raiseZMQException
           else messageDataBuffer.add(mem)
@@ -617,14 +614,14 @@ object ZMQ {
     }
 
     private def newZmqMessage: zmq_msg_t = {
-      val message: zmq_msg_t = new zmq_msg_t
+      val message = new zmq_msg_t
       if (zmq.zmq_msg_init(message) != 0) raiseZMQException
       else message
     }
 
     private def raiseZMQException: Nothing = {
-      val errno: Int = zmq.zmq_errno
-      val reason: String = zmq.zmq_strerror(errno)
+      val errno = zmq.zmq_errno
+      val reason = zmq.zmq_strerror(errno)
       throw new ZMQException(reason, errno)
     }
   }
