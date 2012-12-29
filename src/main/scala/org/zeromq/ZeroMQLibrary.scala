@@ -22,7 +22,7 @@ import com.sun.jna.Memory
 import com.sun.jna.NativeLong
 import com.sun.jna.Pointer
 import com.sun.jna.ptr.LongByReference
-import java.util.Arrays
+import java.util.{ Arrays, HashSet => JHashSet }
 import java.lang.{ Long ⇒ JLong, Integer ⇒ JInteger }
 import scala.beans.BeanProperty
 import scala.annotation.tailrec
@@ -235,7 +235,7 @@ object ZMQ {
     import ZeroMQ._
 
     private[zeromq] final val ptr: Pointer = zmq.zmq_socket(context.ptr, `type`)
-    private final val messageDataBuffer = new java.util.HashSet[Pointer] with zmq_free_fn {
+    private final val messageDataBuffer = new JHashSet[Pointer] with zmq_free_fn {
       override def invoke(data: Pointer, memory: Pointer): Unit = remove(memory)
     }
 
@@ -530,12 +530,12 @@ object ZMQ {
     def send(msg: Array[Byte], flags: Int): Boolean = {
       val message = newZmqMessage(msg)
       if (zmq.zmq_send(ptr, message, flags) == 0) {
-        if (zmq.zmq_msg_close(message) != 0) raiseZMQException else true
+        if (zmq.zmq_msg_close(message) != 0) raiseZMQException() else true
       } else if (zmq.zmq_errno == EAGAIN) {
-        if (zmq.zmq_msg_close(message) != 0) raiseZMQException else false
+        if (zmq.zmq_msg_close(message) != 0) raiseZMQException() else false
       } else {
           zmq.zmq_msg_close(message)
-          raiseZMQException
+          raiseZMQException()
       }
     }
 
@@ -545,15 +545,15 @@ object ZMQ {
      * @return null if NOBLOCK was requested and EAGAIN was returned by recv call, else the bytes received
      */
     def recv(flags: Int): Array[Byte] = {
-      val message = newZmqMessage
+      val message = newZmqMessage()
       if (zmq.zmq_recv(ptr, message, flags) == 0) {
-          val dataByteArray: Array[Byte] = zmq.zmq_msg_data(message).getByteArray(0, zmq.zmq_msg_size(message))
-          if (zmq.zmq_msg_close(message) != 0) raiseZMQException else dataByteArray
+          val dataByteArray = zmq.zmq_msg_data(message).getByteArray(0, zmq.zmq_msg_size(message))
+          if (zmq.zmq_msg_close(message) != 0) raiseZMQException() else dataByteArray
       } else if (zmq.zmq_errno == EAGAIN) {
-        if (zmq.zmq_msg_close(message) != 0) raiseZMQException else null
+        if (zmq.zmq_msg_close(message) != 0) raiseZMQException() else null
       } else {
           zmq.zmq_msg_close(message)
-          raiseZMQException
+          raiseZMQException()
       }
     }
 
@@ -588,7 +588,7 @@ object ZMQ {
       val value = new Memory(1024)
       val length = new LongByReference(1024)
       zmq.zmq_getsockopt(ptr, option, value, length)
-      value.getByteArray(0, length.getValue.asInstanceOf[Int])
+      value.getByteArray(0, length.getValue.intValue)
     }
 
     private def setBytesSockopt(option: Int, optval: Array[Byte]): Unit =
@@ -601,32 +601,31 @@ object ZMQ {
         },
         new NativeLong(optval.length))
 
-    private def newZmqMessage(msg: Array[Byte]): zmq_msg_t = {
+    private def newZmqMessage(msg: Array[Byte] = null): zmq_msg_t = {
       val message = new zmq_msg_t
-      msg.length match {
-        case 0 ⇒ if (zmq.zmq_msg_init_size(message, new NativeLong(0)) != 0) raiseZMQException
-        case len ⇒
-          val mem = new Memory(len)
-          mem.write(0, msg, 0, len)
-          if (zmq.zmq_msg_init_data(message, mem, new NativeLong(len), messageDataBuffer, mem) != 0) raiseZMQException
-          else messageDataBuffer.add(mem)
+      if (msg eq null) {
+        if (zmq.zmq_msg_init(message) != 0) raiseZMQException()
+      } else {
+        msg.length match {
+          case 0 ⇒ if (zmq.zmq_msg_init_size(message, new NativeLong(0)) != 0) raiseZMQException()
+          case len ⇒
+            val mem = new Memory(len)
+            mem.write(0, msg, 0, len)
+            if (zmq.zmq_msg_init_data(message, mem, new NativeLong(len), messageDataBuffer, mem) != 0) raiseZMQException()
+            else messageDataBuffer.add(mem)
+        }
       }
       message
     }
 
-    private def newZmqMessage: zmq_msg_t = {
-      val message = new zmq_msg_t
-      if (zmq.zmq_msg_init(message) != 0) raiseZMQException
-      else message
-    }
-
-    private def raiseZMQException: Nothing = {
-      val errno = zmq.zmq_errno
-      val reason = zmq.zmq_strerror(errno)
-      throw new ZMQException(reason, errno)
-    }
+    private def raiseZMQException(errno: Int = zmq.zmq_errno): Nothing = throw new ZMQException(zmq.zmq_strerror(errno), errno)
   }
 
+  /**
+   * A Poller is a constructs which makes it easy to which Sockets have inbound or outbound messages pending
+   * @param context the 0MQ context this Poller belongs to
+   * @param size the initial size of the Poller, in number of Sockets
+   */
   class Poller (context: ZMQ.Context, size: Int) {
     @BeanProperty var timeout: FiniteDuration = Duration(-1, "ms")
     private var nextEventIndex: Int = 0
@@ -637,16 +636,29 @@ object ZMQ {
     private var revents: Array[Short] = new Array(size)
     private var freeSlots: List[Int] = Nil
 
+    /**
+     * Registers the specified Socket to all of ZMQ_POLLIN, ZMQ_POLLOUT and ZMQ_POLLERR
+     * @param socket the socket which to register to this Poller
+     * @return the index of the registered socket
+     */
     def register(socket: ZMQ.Socket): Int = register(socket, ZeroMQ.ZMQ_POLLIN | ZeroMQ.ZMQ_POLLOUT | ZeroMQ.ZMQ_POLLERR)
 
+    /**
+     * Registers the specified Socket to the specified types of Events
+     * @param socket the socket which to register to this Poller
+     * @return the index of the registered socket
+     */
     def register(socket: ZMQ.Socket, numEvents: Int): Int = {
       require(numEvents <= Short.MaxValue, "numEvents must be less or equal to Short.MaxValue")
       require(numEvents >= Short.MinValue, "numEvents must be greater or equal to Short.MinValue")
-
+      //FIXME handle the case where Socket is already registered
       val pos: Int = freeSlots match {
         case Nil ⇒
           if (nextEventIndex >= maxEventCount) {
             val newMaxEventCount: Int = maxEventCount + 16
+            
+            if (newMaxEventCount > Short.MaxValue) throw new IllegalStateException("maxEventCount may not grow past Short.MaxValue!")
+            
             sockets = Arrays.copyOf(sockets, newMaxEventCount)
             events = Arrays.copyOf(events, newMaxEventCount)
             revents = Arrays.copyOf(revents, newMaxEventCount)
@@ -665,28 +677,53 @@ object ZMQ {
       pos
     }
 
+    /**
+     * Unregisters the specified Socket from this Poller
+     * @param socket the socket which to unregister from this Poller
+     */
     def unregister(socket: ZMQ.Socket): Unit = if (socket ne null) {
-      @tailrec def unreg(index: Int): Unit =
-        if (index >= nextEventIndex || index >= sockets.length) ()
+      @tailrec def unreg(index: Int): Boolean =
+        if (index >= nextEventIndex || index >= sockets.length) false
         else if(sockets(index) eq socket) {
-            sockets(index) = null
-            events(index) = 0: Short
-            revents(index) = 0: Short
-            freeSlots ::= index
-            curEventCount -= 1
+          sockets(index) = null
+          events(index) = 0: Short
+          revents(index) = 0: Short
+          freeSlots ::= index
+          curEventCount -= 1
+          true
         } else unreg(index + 1)
       
       unreg(0)
     }
 
+    /**
+     * a means to obtain the Socket at a given index
+     * @param index the index for the Socket
+     * @return the Socket at the given index, non-existing indices or absence of Socket at given index will yield null
+     */
     def getSocket(index: Int): ZMQ.Socket = if ((index < 0 || index >= nextEventIndex)) null else sockets(index)
 
+    /**
+     * Returns the current max size of this Poller
+     */
     def getSize(): Int = maxEventCount
 
+    /**
+     * Returns the index to the next event
+     */
     def getNext(): Int = nextEventIndex
 
-    def poll: Long = poll(this.timeout)
+    /**
+     * Polls the registered Sockets using the current timeout of this Poller
+     * @return how many items during the poll that yielded revents
+     */
+    def poll(): Long = poll(this.timeout)
 
+    /**
+     * Polls the registered Sockets using a speficied timeout
+     * @param timeout the timeout for the poll operation
+     * @return how many items during the poll that yielded revents
+     */
     def poll(timeout: FiniteDuration): Long = {
       Arrays.fill(revents, 0, nextEventIndex, 0: Short)
       curEventCount match {
@@ -699,7 +736,7 @@ object ZMQ {
             var socketIndex = 0
             while (socketIndex < sockets.length) {
               if (sockets(socketIndex) ne null) {
-                val item: zmq_pollitem_t = items(itemIndex)
+                val item = items(itemIndex)
                 if (init) {
                   item.socket = sockets(socketIndex).ptr
                   item.fd = 0
@@ -729,14 +766,29 @@ object ZMQ {
       }
     }
 
-    def pollin(index: Int): Boolean = poll_mask(index, ZeroMQ.ZMQ_POLLIN)
-
-    def pollout(index: Int): Boolean = poll_mask(index, ZeroMQ.ZMQ_POLLOUT)
-
-    def pollerr(index: Int): Boolean = poll_mask(index, ZeroMQ.ZMQ_POLLERR)
-
     private def poll_mask(index: Int, mask: Int): Boolean =
       if ((mask <= 0 || index < 0 || index >= nextEventIndex)) false else (revents(index) & mask) > 0
+
+    /**
+     * Returns whether there are any ZMQ_POLLIN events to consume
+     * @param index
+     * @return true if ZMQ_POLLIN is set for revents at the given index, false if not
+     */
+    def pollin(index: Int): Boolean = poll_mask(index, ZeroMQ.ZMQ_POLLIN)
+
+    /**
+     * Returns whether there are any ZMQ_POLLOUT events to consume
+     * @param index
+     * @return true if ZMQ_POLLOUT is set for revents at the given index, false if not
+     */
+    def pollout(index: Int): Boolean = poll_mask(index, ZeroMQ.ZMQ_POLLOUT)
+
+    /**
+     * Returns whether there are any ZMQ_POLLERR events to consume
+     * @param index
+     * @return true if ZMQ_POLLERR is set for revents at the given index, false if not
+     */
+    def pollerr(index: Int): Boolean = poll_mask(index, ZeroMQ.ZMQ_POLLERR)
   }
 }
 
