@@ -130,7 +130,12 @@ trait ZeroMQLibrary extends Library {
   def zmq_version(major: Array[Int], minor: Array[Int], patch: Array[Int]): Unit
 }
 
-final case class ZMQException(val message: String, @BeanProperty val errorCode: Int) extends RuntimeException
+/**
+ * ZMQException is used throughout the API to indicate failure
+ * @param message the message to be used
+ * @param errorCode the 0MQ Error Code
+ */
+final case class ZMQException(message: String, @BeanProperty val errorCode: Int) extends RuntimeException(message)
 
 /**
  * Offers an API similar to that of jzmq [1] written by Gonzalo Diethelm.
@@ -138,8 +143,21 @@ final case class ZMQException(val message: String, @BeanProperty val errorCode: 
  * 1. https://github.com/zeromq/jzmq
  */
 object ZMQ {
+
+  /**
+   * Creates a composite version number
+   * @param major the major version of 0MQ
+   * @param minor the minor version of 0MQ
+   * @param patch the patch version of 0MQ
+   * @return major * 10000 + minor * 100 + patch
+   */
   def makeVersion(major: Int, minor: Int, patch: Int): Int = major * 10000 + minor * 100 + patch
-  
+
+  /**
+   * Creates a new 0MQ Context with the specified number of IO Threads
+   * @param ioThreads the number of ioThreads the Context should have
+   * @return a newly created Context
+   */
   def context(ioThreads: Int): Context = new Context(ioThreads)
 
   private final val zmq: ZeroMQLibrary = ZeroMQ.loadLibrary
@@ -149,7 +167,7 @@ object ZMQ {
     zmq.zmq_version(ma, mi, pa)
     (ma(0), mi(0), pa(0), makeVersion(ma(0), mi(0), pa(0)), "%d.%d.%d".format(ma(0), mi(0), pa(0)))
   }
-  
+
   final val NOBLOCK = ZeroMQ.ZMQ_NOBLOCK
   final val DONTWAIT = ZeroMQ.ZMQ_NOBLOCK
   final val PAIR = ZeroMQ.ZMQ_PAIR
@@ -183,6 +201,11 @@ object ZMQ {
   private final val versionBelow300 = fullVersion < makeVersion(3, 0, 0)
   private final val versionAtleast300 = !versionBelow300
 
+  /**
+   * Represents a 0MQ Socket
+   * @param context which Context the Socket belongs to
+   * @param `type` the Socket Type (http://api.zeromq.org/2-1:zmq-socket)
+   */
   class Socket(context: ZMQ.Context, `type`: Int) {
     import ZeroMQ._
     private final class MessageDataBuffer extends zmq_free_fn {
@@ -194,100 +217,294 @@ object ZMQ {
     private[zeromq] final val ptr: Pointer = zmq.zmq_socket(context.ptr, `type`)
     private final val messageDataBuffer = new MessageDataBuffer
 
+    /**
+     * Closes this 0MQ Socket
+     */
     def close(): Unit = zmq.zmq_close(ptr)
 
+    /**
+     * Retrieves the Socket Type
+     * @return -1 if version < 2.1, or the Socket Type
+     */
     def getType(): Int = if (versionBelow210) -1 else getLongSockopt(ZMQ_TYPE).asInstanceOf[Int]
 
+    /**
+     * Retrieves the Linger value for this Socket
+     * @return -1 if version < 2.1, or the Linger Value
+     */
     def getLinger(): Int = if (versionBelow210) -1 else getIntSockopt(ZMQ_LINGER)
 
+    /**
+     * Retrieves the Reconnect Interval for this Socket
+     * @return -1 if version < 2.1, or the Reconnect Interval
+     */
     def getReconnectIVL(): Int = if (versionBelow210) -1 else getIntSockopt(ZMQ_RECONNECT_IVL)
 
+    /**
+     * Retrieves the Backlog number for this Socket
+     * @return -1 if version < 2.1, or the Backlog number
+     */
     def getBacklog(): Int = if (versionBelow210) -1 else getIntSockopt(ZMQ_BACKLOG)
 
+    /**
+     * Retrieves the Maximum Reconnect Interval for this Socket
+     * @return -1 if version < 2.1, or the Maximum Reconnect Interval
+     */
     def getReconnectIVLMax(): Int = if (versionBelow210) -1 else getIntSockopt(ZMQ_RECONNECT_IVL_MAX)
 
+    /**
+     * Retrieves the Maximum Message Size for this Socket
+     * @return -1 if version < 3.0, or the Maximum Message Size
+     */
     def getMaxMsgSize(): Long = if (versionBelow300) -1 else getLongSockopt(ZMQ_MAXMSGSIZE)
 
+    /**
+     * Retrieves the Send High Water Mark for this Socket
+     * @return -1 if version < 3.0, or the Send High Water Mark
+     */
     def getSndHWM(): Int = if (versionBelow300) -1 else getIntSockopt(ZMQ_SNDHWM)
 
+    /**
+     * Retrieves the Receive High Water Mark for this Socket
+     * @return -1 if version < 3.0, or the Receive High Water Mark
+     */
     def getRcvHWM(): Int = if (versionBelow300) -1 else getIntSockopt(ZMQ_RCVHWM)
 
+    /**
+     * Retrieves the High Water Mark for this Socket
+     * @return -1 if version < 3.0, or the High Water Mark
+     */
     def getHWM(): Long = if (versionBelow300) getLongSockopt(ZMQ_HWM) else -1
 
+    /**
+     * Retrieves the Swap size in bytes for this Socket
+     * @return -1 if version < 3.0, or the Swap size in bytes
+     */
     def getSwap(): Long = if (versionBelow300) -1 else getLongSockopt(ZMQ_SWAP)
 
+    /**
+     * Retrieves the Affinity for this Socket
+     * @return the Affinity
+     */
     def getAffinity(): Long = getLongSockopt(ZMQ_AFFINITY)
 
+    /**
+     * Retrieves the Identity of this Socket
+     * @return the Identity of this Socket
+     */
     def getIdentity(): Array[Byte] = getBytesSockopt(ZMQ_IDENTITY)
 
+    /**
+     * Retrieves the multicast data rate for this Socket
+     * @return the multicast data rate
+     */
     def getRate(): Long = getLongSockopt(ZMQ_RATE)
 
+    /**
+     * Retrieves the Recovery Interval for this Socket
+     * @return the Recovery Interval in seconds
+     */
     def getRecoveryInterval(): Long = getLongSockopt(ZMQ_RECOVERY_IVL)
 
-    def hasMulticastLoop(): Boolean = if (versionBelow300) false else getLongSockopt(ZMQ_MCAST_LOOP) != 0
+    /**
+     * Retrieves whether this Socket has Multicast Loop enabled
+     * @return false if version >= 3.0, or whether this Socket has Multicast Loop enabled
+     */
+    def hasMulticastLoop(): Boolean = if (versionAtleast300) false else getLongSockopt(ZMQ_MCAST_LOOP) != 0
 
+    /**
+     * Sets the maximum number of hops for multicast messages
+     * @param mcast_hops the maximum number of hops
+     */
     def setMulticastHops(mcast_hops: Long): Unit = setLongSockopt(ZMQ_MCAST_LOOP, mcast_hops)
 
+    /**
+     * Retrieves the maximum number of hops for multicast messages for this Socket
+     * @return -1 if version < 3.0, or the maximum number of hops for multicast messages
+     */
     def getMulticastHops(): Long = if (versionBelow300) -1 else getLongSockopt(ZMQ_MCAST_LOOP)
 
+    /**
+     * Sets the Receive Timeout for this Socket, if the 0MQ version is at least 2.2
+     * @param timeout in millis, -1 for infinity and 0 for no timeout
+     */
     def setReceiveTimeOut(timeout: Int): Unit = if (versionAtleast220) setIntSockopt(ZMQ_RCVTIMEO, timeout)
 
+    /**
+     * Retrieves the Receive Timeout for this Socket
+     * @return -1 if version < 2.2, or the Receive Timeout
+     */
     def getReceiveTimeOut(): Int = if (versionBelow220) -1 else getIntSockopt(ZMQ_RCVTIMEO)
 
+    /**
+     * Sets the Send Timeout for this Socket, if the 0MQ version is at least 2.2
+     * @param timeout in milliseconds, -1 for infinity and 0 for no timeout
+     */
     def setSendTimeOut(timeout: Int): Unit = if (versionAtleast220) setIntSockopt(ZMQ_SNDTIMEO, timeout)
 
+    /**
+     * Retrieves the Send Timeout for this Socket
+     * @return -1 if version < 2.2, or the Send Timeout
+     */
     def getSendTimeOut(): Int = if (versionBelow220) -1 else getIntSockopt(ZMQ_SNDTIMEO)
 
+    /**
+     * Retrieves the Send Buffer Size for this Socket
+     * @return the Send Buffer Size
+     */
     def getSendBufferSize(): Long = getLongSockopt(ZMQ_SNDBUF)
 
-    def getReceiveBufferSize(): Long = getLongSockopt(ZMQ_RCVBUF)
-
-    def hasReceiveMore(): Boolean = getLongSockopt(ZMQ_RCVMORE) != 0
-
-    def getFD(): Long = if (versionBelow210) -1 else getLongSockopt(ZMQ_FD)
-
-    def getEvents(): Long = if (versionBelow210) -1 else getLongSockopt(ZMQ_EVENTS)
-
-    def setLinger(linger: Int): Unit = if (versionAtleast210) setIntSockopt(ZMQ_LINGER, linger)
-
-    def setReconnectIVL(reconnectIVL: Int): Unit = if (versionAtleast210) setIntSockopt(ZMQ_RECONNECT_IVL, reconnectIVL)
-
-    def setBacklog(backlog: Int): Unit = if (versionAtleast210) setIntSockopt(ZMQ_BACKLOG, backlog)
-
-    def setReconnectIVLMax(reconnectIVLMax: Int): Unit = if (versionAtleast210) setIntSockopt(ZMQ_RECONNECT_IVL_MAX, reconnectIVLMax)
-
-    def setMaxMsgSize(maxMsgSize: Long): Unit = if (versionAtleast300) setLongSockopt(ZMQ_MAXMSGSIZE, maxMsgSize)
-
-    def setSndHWM(sndHWM: Int): Unit = if (versionAtleast300) setIntSockopt(ZMQ_SNDHWM, sndHWM)
-
-    def setRcvHWM(rcvHWM: Int): Unit = if (versionBelow300) setIntSockopt(ZMQ_RCVHWM, rcvHWM)
-
-    def setHWM(hwm: Long): Unit = if (versionBelow300) setLongSockopt(ZMQ_HWM, hwm)
-
-    def setSwap(swap: Long): Unit = if (versionAtleast300) setLongSockopt(ZMQ_SWAP, swap)
-
-    def setAffinity(affinity: Long): Unit = setLongSockopt(ZMQ_AFFINITY, affinity)
-
-    def setIdentity(identity: Array[Byte]): Unit = setBytesSockopt(ZMQ_IDENTITY, identity)
-
-    def subscribe(topic: Array[Byte]): Unit = setBytesSockopt(ZMQ_SUBSCRIBE, topic)
-
-    def unsubscribe(topic: Array[Byte]): Unit = setBytesSockopt(ZMQ_UNSUBSCRIBE, topic)
-
-    def setRate(rate: Long): Unit = setLongSockopt(ZMQ_RATE, rate)
-
-    def setRecoveryInterval(recovery_ivl: Long): Unit = setLongSockopt(ZMQ_RECONNECT_IVL, recovery_ivl)
-
-    def setMulticastLoop(mcast_loop: Boolean): Unit = if (versionBelow300) setLongSockopt(ZMQ_MCAST_LOOP, if (mcast_loop) 1 else 0)
-
+    /**
+     * Sets the Send Buffer Size for this Socket
+     * @param sndbuf size in bytes
+     */
     def setSendBufferSize(sndbuf: Long): Unit = setLongSockopt(ZMQ_SNDBUF, sndbuf)
 
+    /**
+     * Retrieves the Receive Buffer Size for this Socket
+     * @return the Receive Buffer Size
+     */
+    def getReceiveBufferSize(): Long = getLongSockopt(ZMQ_RCVBUF)
+
+    /**
+     * Retrieves whether the last message that was received was a partial message with more to follow
+     * @return true if more data is to follow, false if not
+     */
+    def hasReceiveMore(): Boolean = getLongSockopt(ZMQ_RCVMORE) != 0
+
+    /**
+     * Retrieves the File Descriptor for this Socket
+     * @return -1 if version < 2.1, or the File Descriptor
+     */
+    def getFD(): Long = if (versionBelow210) -1 else getLongSockopt(ZMQ_FD)
+
+    /**
+     * Retrieves the Event State for this Socket
+     * @return -1 if version < 2.1, or a bit mask of ZMQ_POLLIN and ZMQ_POLLOUT depending if reading and/or writing is possible
+     */
+    def getEvents(): Long = if (versionBelow210) -1 else getLongSockopt(ZMQ_EVENTS)
+
+    /**
+     * Sets the Linger period if the 0MQ version is at least 2.1 for this Socket
+     * @param linger the linger period in millis, 0 to indicate no linger
+     */
+    def setLinger(linger: Int): Unit = if (versionAtleast210) setIntSockopt(ZMQ_LINGER, linger)
+
+    /**
+     * Sets the Reconnect Interval, if the 0MQ version is at least 2.1, for this Socket
+     * @param reconnectIVL in milliseconds, -1 indicates no reconnection
+     */
+    def setReconnectIVL(reconnectIVL: Int): Unit = if (versionAtleast210) setIntSockopt(ZMQ_RECONNECT_IVL, reconnectIVL)
+
+    /**
+     * Sets the Backlog of connections, if the 0MQ version is at least 2.1, for this Socket
+     * @param backlog in number of connections
+     */
+    def setBacklog(backlog: Int): Unit = if (versionAtleast210) setIntSockopt(ZMQ_BACKLOG, backlog)
+
+    /**
+     * Sets the Maximum Reconnect Interval, if the 0MQ version is at least 2.1, for this Socket
+     * @param reconnectIVLMax in milliseconds, 0 for no backoff, values less than reconnectIVL will be ignored
+     */
+    def setReconnectIVLMax(reconnectIVLMax: Int): Unit = if (versionAtleast210) setIntSockopt(ZMQ_RECONNECT_IVL_MAX, reconnectIVLMax)
+
+    /**
+     * Sets the Maximum Message Size, if the 0MQ version is at least 3.0, for this Socket
+     * @param maxMsgSize in bytes, -1 for no limit
+     */
+    def setMaxMsgSize(maxMsgSize: Long): Unit = if (versionAtleast300) setLongSockopt(ZMQ_MAXMSGSIZE, maxMsgSize)
+
+    /**
+     * Sets the Send High Water Mark, if the 0MQ version is at least 3.0, for this Socket
+     * @param sndHWM in number of messages
+     */
+    def setSndHWM(sndHWM: Int): Unit = if (versionAtleast300) setIntSockopt(ZMQ_SNDHWM, sndHWM)
+
+    /**
+     * Sets the Receive High Water Mark, if the 0MQ version is at least 3.0, for this Socket
+     * @param rcvHWM in number of messages
+     */
+    def setRcvHWM(rcvHWM: Int): Unit = if (versionAtleast300) setIntSockopt(ZMQ_RCVHWM, rcvHWM)
+
+    /**
+     * Sets the High Water Mark, if the 0MQ version is < 3.0, for this Socket
+     * @param hwm in number of messages, 0 means no limit
+     */
+    def setHWM(hwm: Long): Unit = if (versionBelow300) setLongSockopt(ZMQ_HWM, hwm)
+
+    /**
+     * Sets the Swap, if the 0MQ version is > 3.0, for this Socket
+     * @param swap in number of bytes
+     */
+    def setSwap(swap: Long): Unit = if (versionAtleast300) setLongSockopt(ZMQ_SWAP, swap)
+
+    /**
+     * Sets the Affinity for this Socket
+     * @param affinity a bit mask representing which IO Threads to assign affinity towards
+     */
+    def setAffinity(affinity: Long): Unit = setLongSockopt(ZMQ_AFFINITY, affinity)
+
+    /**
+     * Sets the Identity of this Socket
+     * @param identity at least 1 byte and at most 255 bytes
+     */
+    def setIdentity(identity: Array[Byte]): Unit = setBytesSockopt(ZMQ_IDENTITY, identity)
+
+
+    /**
+     * Sets the Data Rate for multicast transports for this Socket
+     * @param rate in kbits per second
+     */
+    def setRate(rate: Long): Unit = setLongSockopt(ZMQ_RATE, rate)
+
+    /**
+     * Sets the Recovery Interval for this Socket
+     * @param recoveryIVL in seconds
+     */
+    def setRecoveryInterval(recoveryIVL: Long): Unit = setLongSockopt(ZMQ_RECOVERY_IVL, recoveryIVL)
+
+    /**
+     * Sets Multicast Loop, if 0MQ version < 3.0, for this Socket
+     * @param mcast_loop true to enable, false to disable
+     */
+    def setMulticastLoop(mcast_loop: Boolean): Unit = if (versionBelow300) setLongSockopt(ZMQ_MCAST_LOOP, if (mcast_loop) 1 else 0)
+
+    /**
+     * Sets the Receive Buffer Size for this Socket
+     * @param rcvbuf in bytes, 0 means use OS default
+     */
     def setReceiveBufferSize(rcvbuf: Long): Unit = setLongSockopt(ZMQ_RCVBUF, rcvbuf)
 
+    /**
+     * Subscribes this Socket to a type of messages
+     * @param topic empty array for all messages, non-empty array to prefix match inbound messages
+     */
+    def subscribe(topic: Array[Byte]): Unit = setBytesSockopt(ZMQ_SUBSCRIBE, topic)
+
+    /**
+     * Unsubscribes this Socket from a type of messages
+     * @param topic empty array for all messages, non-empty array to prefix match inbound messages
+     */
+    def unsubscribe(topic: Array[Byte]): Unit = setBytesSockopt(ZMQ_UNSUBSCRIBE, topic)
+
+    /**
+     * Binds this Socket to an address
+     * @param addr the address to bind to, according to: http://api.zeromq.org/2-1:zmq-bind
+     */
     def bind(addr: String): Unit = zmq.zmq_bind(ptr, addr)
 
+    /**
+     * Connects this Socket to an address
+     * @param addr the address to connect to, according to: http://api.zeromq.org/2-1:zmq-connect
+     */
     def connect(addr: String): Unit = zmq.zmq_connect(ptr, addr)
 
+    /**
+     * Sends the given message to this Socket, see the following for more details: http://api.zeromq.org/2-1:zmq-send
+     * @param msg the bytes to send
+     * @param flags ZMQ_NOBLOCK or ZMQ_SNDMORE or both
+     * @return true if send succeeded, false if NOBLOCK requested and EAGAIN returned by send call
+     */
     def send(msg: Array[Byte], flags: Int): Boolean = {
       val message: zmq_msg_t = newZmqMessage(msg)
       zmq.zmq_send(ptr, message, flags) match {
@@ -299,6 +516,11 @@ object ZMQ {
       }
     }
 
+    /**
+     * Receives a message from this Socket, see the following for more details: http://api.zeromq.org/3-2:zmq-recv
+     * @param flags
+     * @return null if NOBLOCK was requested and EAGAIN was returned by recv call, else the bytes received
+     */
     def recv(flags: Int): Array[Byte] = {
       val message: zmq_msg_t = newZmqMessage
       zmq.zmq_recv(ptr, message, flags) match {
@@ -312,7 +534,7 @@ object ZMQ {
       }
     }
 
-    override protected def finalize: Unit = close
+    override protected def finalize: Unit = close()
 
     private def getLongSockopt(option: Int): Long = {
       val value: Memory = new Memory(JLong.SIZE / 8)
