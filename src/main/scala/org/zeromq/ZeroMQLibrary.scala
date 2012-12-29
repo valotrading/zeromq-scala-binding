@@ -187,11 +187,35 @@ object ZMQ {
   final val FORWARDER = ZeroMQ.ZMQ_FORWARDER
   final val QUEUE = ZeroMQ.ZMQ_QUEUE
 
+  /**
+   * Represents a 0MQ Context
+   * @param ioThreads the number of IO Threads this Context should have
+   */
   class Context(ioThreads: Int) {
     protected[zeromq] final val ptr: Pointer = zmq.zmq_init(ioThreads)
+
+    /**
+     * Terminates this Context
+     */
     def term(): Unit = zmq.zmq_term(ptr)
+
+    /**
+     * Creates a new Socket in this Context with the given Socket Type
+     * @param `type` the type of Socket, see: PAIR, PUB, SUB, REQ, REP, DEALER, ROUTER, PULL, PUSH, XPUB, XSUB
+     * @return a newly created Socket of the given type
+     */
     def socket(`type`: Int): Socket = new Socket(this, `type`)
+
+    /**
+     * Creates a new Poller for this Context with default size of Sockets, 32
+     * @return a newly created Poller with the given size
+     */
     def poller(): Poller = poller(32)
+
+    /**
+     * Creates a new Poller for this Context
+     * @return a newly created Poller with the given size
+     */
     def poller(size: Int): Poller = new Poller(this, size)
   }
 
