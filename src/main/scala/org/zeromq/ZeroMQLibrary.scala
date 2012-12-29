@@ -529,10 +529,11 @@ object ZMQ {
      */
     def send(msg: Array[Byte], flags: Int): Boolean = {
       val message = newZmqMessage(msg)
-      zmq.zmq_send(ptr, message, flags) match {
-        case 0 ⇒ if (zmq.zmq_msg_close(message) != 0) raiseZMQException else true
-        case EAGAIN ⇒ if (zmq.zmq_msg_close(message) != 0) raiseZMQException else false
-        case other ⇒
+      if (zmq.zmq_send(ptr, message, flags) == 0) {
+        if (zmq.zmq_msg_close(message) != 0) raiseZMQException else true
+      } else if (zmq.zmq_errno == EAGAIN) {
+        if (zmq.zmq_msg_close(message) != 0) raiseZMQException else false
+      } else {
           zmq.zmq_msg_close(message)
           raiseZMQException
       }
@@ -545,12 +546,12 @@ object ZMQ {
      */
     def recv(flags: Int): Array[Byte] = {
       val message = newZmqMessage
-      zmq.zmq_recv(ptr, message, flags) match {
-        case 0 ⇒
+      if (zmq.zmq_recv(ptr, message, flags) == 0) {
           val dataByteArray: Array[Byte] = zmq.zmq_msg_data(message).getByteArray(0, zmq.zmq_msg_size(message))
           if (zmq.zmq_msg_close(message) != 0) raiseZMQException else dataByteArray
-        case EAGAIN ⇒ if (zmq.zmq_msg_close(message) != 0) raiseZMQException else null
-        case other ⇒
+      } else if (zmq.zmq_errno == EAGAIN) {
+        if (zmq.zmq_msg_close(message) != 0) raiseZMQException else null
+      } else {
           zmq.zmq_msg_close(message)
           raiseZMQException
       }
