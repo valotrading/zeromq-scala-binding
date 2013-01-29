@@ -4,14 +4,14 @@ name := "zeromq-scala-binding"
 
 version := "0.1.0-SNAPSHOT"
 
-scalaVersion := "2.10.0-RC5"
+crossScalaVersions := Seq("2.9.2", "2.10.0")
 
 scalaBinaryVersion <<= scalaVersion
 
 libraryDependencies ++= Seq(
   "net.java.dev.jna" %  "jna"           % "3.0.9",
   "com.github.jnr"   %  "jnr-constants" % "0.8.2",
-  "org.scalatest"    %% "scalatest"     % "1.8-B1" % "test" cross CrossVersion.full
+  "org.scalatest"    %% "scalatest"     % "2.0.M5" % "test" cross CrossVersion.full
 )
 
 scalacOptions := Seq("-deprecation", "-unchecked")
