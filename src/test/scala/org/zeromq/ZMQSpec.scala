@@ -27,6 +27,22 @@ class ZMQSpec extends WordSpec with MustMatchers {
       sub.getType must equal(ZMQ.SUB)
       sub.close()
     }
+    "raise error if connect fails" in {
+      val context = ZMQ.context(1)
+      val sub = context.socket(ZMQ.SUB)
+      intercept[ZMQException] {
+        sub.connect("inproc://zmq-spec")
+      }
+      sub.close()
+    }
+    "raise error if bind fails" in {
+      val context = ZMQ.context(1)
+      val sub = context.socket(ZMQ.SUB)
+      intercept[ZMQException] {
+        sub.bind("bad-address")
+      }
+      sub.close()
+    }
     "support pub-sub connection pattern" in {
       val context = ZMQ.context(1)
       val (pub, sub, poller) = (context.socket(ZMQ.PUB),  context.socket(ZMQ.SUB),  context.poller)
