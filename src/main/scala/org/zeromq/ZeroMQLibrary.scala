@@ -513,13 +513,23 @@ object ZMQ {
      * Binds this Socket to an address
      * @param addr the address to bind to, according to: http://api.zeromq.org/2-1:zmq-bind
      */
-    def bind(addr: String): Unit = zmq.zmq_bind(ptr, addr)
+    def bind(addr: String): Unit = {
+      if (zmq.zmq_bind(ptr, addr) != 0) {
+        val errno = zmq.zmq_errno
+        throw new ZMQException(zmq.zmq_strerror(errno), errno)
+      }
+    }
 
     /**
      * Connects this Socket to an address
      * @param addr the address to connect to, according to: http://api.zeromq.org/2-1:zmq-connect
      */
-    def connect(addr: String): Unit = zmq.zmq_connect(ptr, addr)
+    def connect(addr: String): Unit = {
+      if (zmq.zmq_connect(ptr, addr) != 0) {
+        val errno = zmq.zmq_errno
+        throw new ZMQException(zmq.zmq_strerror(errno), errno)
+      }
+    }
 
     /**
      * Sends the given message to this Socket, see the following for more details: http://api.zeromq.org/2-1:zmq-send
