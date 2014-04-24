@@ -16,15 +16,15 @@
 package org.zeromq
 
 import org.scalatest.WordSpec
-import org.scalatest.matchers.MustMatchers
+import org.scalatest.Matchers
 import org.zeromq.ZMQ._
 
-class ZMQSpec extends WordSpec with MustMatchers {
+class ZMQSpec extends WordSpec with Matchers {
   "ZMQ" must {
     "support Socket#getType" in {
       val context = ZMQ.context(1)
       val sub = context.socket(ZMQ.SUB)
-      sub.getType must equal(ZMQ.SUB)
+      sub.getType should equal(ZMQ.SUB)
       sub.close()
     }
     "raise error if connect fails" in {
@@ -51,10 +51,10 @@ class ZMQSpec extends WordSpec with MustMatchers {
       sub.subscribe(Array.empty)
       poller.register(sub)
       pub.send(outgoingMessage, 0)
-      poller.poll must equal(1)
-      poller.pollin(0) must equal(true)
+      poller.poll should equal(1)
+      poller.pollin(0) should equal(true)
       val incomingMessage = sub.recv(0)
-      incomingMessage must equal(outgoingMessage)
+      incomingMessage should equal(outgoingMessage)
       sub.close()
       pub.close()
     }
@@ -65,9 +65,9 @@ class ZMQSpec extends WordSpec with MustMatchers {
       val subs = 1 to 100 map { _ => connectSubscriber(context) }
       subs foreach poller.register
       pub.send(outgoingMessage, 0)
-      poller.poll must equal(subs.size)
-      subs.indices foreach { i => poller.pollin(i) must be(true) }
-      subs foreach { _.recv(ZMQ.NOBLOCK) must equal(outgoingMessage) }
+      poller.poll should equal(subs.size)
+      subs.indices foreach { i => poller.pollin(i) should be(true) }
+      subs foreach { _.recv(ZMQ.NOBLOCK) should equal(outgoingMessage) }
       subs foreach { _.close() }
       pub.close()
     }
@@ -87,8 +87,8 @@ class ZMQSpec extends WordSpec with MustMatchers {
 
       rep.bind(url)
 
-      rep.getSendTimeOut must equal(timeout)
-      rep.getReceiveTimeOut must equal(timeout)
+      rep.getSendTimeOut should equal(timeout)
+      rep.getReceiveTimeOut should equal(timeout)
       rep.close()
     }
     "support setting the high water mark" in {
@@ -100,7 +100,7 @@ class ZMQSpec extends WordSpec with MustMatchers {
 
       rep.bind(url)
 
-      rep.getHWM() must equal(hwq)
+      rep.getHWM() should equal(hwq)
       rep.close()
     }
     "support setting the rate" in {
@@ -112,7 +112,7 @@ class ZMQSpec extends WordSpec with MustMatchers {
 
       rep.bind(url)
 
-      rep.getRate() must equal(rate)
+      rep.getRate() should equal(rate)
       rep.close()
     }
     "support setting linger" in {
@@ -124,7 +124,7 @@ class ZMQSpec extends WordSpec with MustMatchers {
 
       rep.bind(url)
 
-      rep.getLinger() must equal(linger)
+      rep.getLinger() should equal(linger)
       rep.close()
     }
 
@@ -139,8 +139,8 @@ class ZMQSpec extends WordSpec with MustMatchers {
       rep.setReconnectIVLMax(rivlMax)
       rep.bind(url)
 
-      rep.getReconnectIVL() must equal(rivl)
-      rep.getReconnectIVLMax() must equal(rivlMax)
+      rep.getReconnectIVL() should equal(rivl)
+      rep.getReconnectIVLMax() should equal(rivlMax)
       rep.close()
     }
 
@@ -153,7 +153,7 @@ class ZMQSpec extends WordSpec with MustMatchers {
       rep.setBacklog(backlog)
       rep.bind(url)
 
-      rep.getBacklog() must equal(backlog)
+      rep.getBacklog() should equal(backlog)
       rep.close()
     }
   }

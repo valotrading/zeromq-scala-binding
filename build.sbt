@@ -4,14 +4,14 @@ name := "zeromq-scala-binding"
 
 version := "0.1.0-SNAPSHOT"
 
-scalaVersion := "2.10.0"
+val requestedScalaVersion = System.getProperty("zeromq-scala-binding.scalaVersion", "2.10.4")
 
-scalaBinaryVersion <<= scalaVersion
+scalaVersion := requestedScalaVersion
 
 libraryDependencies ++= Seq(
   "net.java.dev.jna" %  "jna"           % "3.0.9",
   "com.github.jnr"   %  "jnr-constants" % "0.8.2",
-  "org.scalatest"    %  "scalatest_2.10"     % "2.0.M5b" % "test"
+  "org.scalatest"    %%  "scalatest"    % "2.1.3" % "test"
 )
 
 scalacOptions := Seq("-deprecation", "-unchecked")
