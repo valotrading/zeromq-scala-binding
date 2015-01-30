@@ -122,8 +122,8 @@ trait ZeroMQLibrary extends Library {
   def zmq_msg_move(dest: zmq_msg_t, src: zmq_msg_t): Int
   def zmq_msg_size(msg: zmq_msg_t): Int
   def zmq_poll(items: Array[zmq_pollitem_t], nitems: Int, timeout: NativeLong): Int
-  def zmq_recv(socket: Pointer, msg: zmq_msg_t, flags: Int): Int
-  def zmq_send(socket: Pointer, msg: zmq_msg_t, flags: Int): Int
+  def zmq_msg_recv(msg: zmq_msg_t, socket: Pointer, flags: Int): Int
+  def zmq_msg_send(msg: zmq_msg_t, socket: Pointer, flags: Int): Int
   def zmq_setsockopt(socket: Pointer, option_name: Int, option_value: Pointer, option_len: NativeLong): Int
   def zmq_socket(context: Pointer, socket_type: Int): Pointer
   def zmq_strerror(errnum: Int): String
@@ -539,13 +539,11 @@ object ZMQ {
      */
     def send(msg: Array[Byte], flags: Int): Boolean = {
       val message = newZmqMessage(msg)
-      if (zmq.zmq_send(ptr, message, flags) == 0) {
-        if (zmq.zmq_msg_close(message) != 0) raiseZMQException() else true
-      } else if (zmq.zmq_errno == EAGAIN) {
-        if (zmq.zmq_msg_close(message) != 0) raiseZMQException() else false
+      if (zmq.zmq_msg_send(message, ptr, flags) < 0) {
+        zmq.zmq_msg_close(message)
+        raiseZMQException()
       } else {
-          zmq.zmq_msg_close(message)
-          raiseZMQException()
+        if (zmq.zmq_msg_close(message) != 0) raiseZMQException() else false
       }
     }
 
@@ -556,14 +554,17 @@ object ZMQ {
      */
     def recv(flags: Int): Array[Byte] = {
       val message = newZmqMessage()
-      if (zmq.zmq_recv(ptr, message, flags) == 0) {
-          val dataByteArray = zmq.zmq_msg_data(message).getByteArray(0, zmq.zmq_msg_size(message))
-          if (zmq.zmq_msg_close(message) != 0) raiseZMQException() else dataByteArray
-      } else if (zmq.zmq_errno == EAGAIN) {
-        if (zmq.zmq_msg_close(message) != 0) raiseZMQException() else null
-      } else {
+      if (zmq.zmq_msg_recv(message, ptr, flags) < 0) {
+        if (zmq.zmq_errno == EAGAIN) {
+          if (zmq.zmq_msg_close(message) != 0) raiseZMQException() else null
+        }
+        else {
           zmq.zmq_msg_close(message)
           raiseZMQException()
+        }
+      } else {
+        val dataByteArray = zmq.zmq_msg_data(message).getByteArray(0, zmq.zmq_msg_size(message))
+        if (zmq.zmq_msg_close(message) != 0) raiseZMQException() else dataByteArray
       }
     }
 
