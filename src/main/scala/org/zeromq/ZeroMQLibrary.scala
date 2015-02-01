@@ -26,7 +26,8 @@ import java.util.{ Arrays, HashSet => JHashSet }
 import java.lang.{ Long ⇒ JLong, Integer ⇒ JInteger }
 import scala.beans.BeanProperty
 import scala.annotation.tailrec
-import concurrent.duration.{Duration, FiniteDuration}
+import concurrent.duration._
+
 
 object ZeroMQ {
 
@@ -102,6 +103,10 @@ object ZeroMQ {
   val ZMQ_POLLOUT = 2: Short
   val ZMQ_POLLERR = 4: Short
 
+  /** Context options */
+  val ZMQ_IO_THREADS =  1
+  val ZMQ_MAX_SOCKETS = 2
+
   def loadLibrary(): ZeroMQLibrary = Native.loadLibrary("zmq", classOf[ZeroMQLibrary]).asInstanceOf[ZeroMQLibrary]
 }
 
@@ -128,6 +133,7 @@ trait ZeroMQLibrary extends Library {
   def zmq_socket(context: Pointer, socket_type: Int): Pointer
   def zmq_strerror(errnum: Int): String
   def zmq_term(context: Pointer): Int
+  def zmq_ctx_set(context: Pointer, option_name: Int, option_value: Int): Boolean
   def zmq_version(major: Array[Int], minor: Array[Int], patch: Array[Int]): Unit
 }
 
@@ -217,6 +223,8 @@ object ZMQ {
      * @return a newly created Poller with the given size
      */
     def poller(size: Int): Poller = new Poller(this, size)
+
+    def setMaxSockets(maxSockets: Int): Boolean = zmq.zmq_ctx_set(ptr, ZeroMQ.ZMQ_MAX_SOCKETS, maxSockets)
   }
 
   private final val versionBelow210 = fullVersion < makeVersion(2, 1, 0)
