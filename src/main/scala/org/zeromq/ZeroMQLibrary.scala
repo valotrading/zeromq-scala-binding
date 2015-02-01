@@ -646,6 +646,9 @@ object ZMQ {
    * @param size the initial size of the Poller, in number of Sockets
    */
   class Poller (context: ZMQ.Context, size: Int) {
+
+    def this(size: Int) = this(null, size)
+
     @BeanProperty var timeout: FiniteDuration = Duration(-1, "ms")
     private var nextEventIndex: Int = 0
     private var maxEventCount: Int = size
@@ -738,12 +741,15 @@ object ZMQ {
      */
     def poll(): Long = poll(this.timeout)
 
+
+    def poll(timeout: Long): Int = poll(1 milliseconds)
+
     /**
      * Polls the registered Sockets using a speficied timeout
      * @param timeout the timeout for the poll operation
      * @return how many items during the poll that yielded revents
      */
-    def poll(timeout: FiniteDuration): Long = {
+    def poll(timeout: FiniteDuration): Int = {
       Arrays.fill(revents, 0, nextEventIndex, 0: Short)
       curEventCount match {
         case 0 ⇒ 0
