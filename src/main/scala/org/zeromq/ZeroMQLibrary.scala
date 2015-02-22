@@ -45,8 +45,9 @@ object ZeroMQ {
   val ZMQ_XSUB   = 10
 
   /** Send / receive options */
-  val ZMQ_NOBLOCK = 1
-  val ZMQ_SNDMORE = 2 
+  val ZMQ_DONTWAIT = 1
+  val ZMQ_SNDMORE = 2
+  val ZMQ_NOBLOCK = ZMQ_DONTWAIT //leaved for backward compatibility
 
   /** Socket options */
   val ZMQ_HWM               = 1
