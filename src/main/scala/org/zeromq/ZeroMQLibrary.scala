@@ -47,9 +47,15 @@ object ZeroMQ {
   /** Send / receive options */
   val ZMQ_DONTWAIT = 1
   val ZMQ_SNDMORE = 2
-  val ZMQ_NOBLOCK = ZMQ_DONTWAIT //leaved for backward compatibility
+  /**
+   * @deprecated Replaced by ZMQ_DONTWAIT.
+   */
+  val ZMQ_NOBLOCK = ZMQ_DONTWAIT
 
   /** Socket options */
+  /**
+   * @deprecated Use ZMQ_SNDHWM & ZMQ_RCVHWM
+   */
   val ZMQ_HWM               = 1
   val ZMQ_SWAP              = 3
   val ZMQ_AFFINITY          = 4
@@ -257,7 +263,7 @@ object ZMQ {
      * Retrieves the Socket Type
      * @return -1 if version < 2.1, or the Socket Type
      */
-    def getType(): Int = if (versionBelow210) -1 else getLongSockopt(ZMQ_TYPE).asInstanceOf[Int]
+    def getType(): Int = if (versionBelow210) -1 else getIntSockopt(ZMQ_TYPE)
 
     /**
      * Retrieves the Linger value for this Socket
@@ -329,7 +335,7 @@ object ZMQ {
      * Retrieves the multicast data rate for this Socket
      * @return the multicast data rate
      */
-    def getRate(): Long = getLongSockopt(ZMQ_RATE)
+    def getRate(): Long = if(versionAtleast300) getIntSockopt(ZMQ_RATE) else getLongSockopt(ZMQ_RATE)
 
     /**
      * Retrieves the Recovery Interval for this Socket
@@ -347,13 +353,14 @@ object ZMQ {
      * Sets the maximum number of hops for multicast messages
      * @param mcast_hops the maximum number of hops
      */
-    def setMulticastHops(mcast_hops: Long): Unit = setLongSockopt(ZMQ_MCAST_LOOP, mcast_hops)
+    def setMulticastHops(mcast_hops: Long): Unit = if(versionAtleast300) setIntSockopt(ZMQ_MULTICAST_HOPS, mcast_hops.toInt)
+      else setLongSockopt(ZMQ_MCAST_LOOP, mcast_hops)
 
     /**
      * Retrieves the maximum number of hops for multicast messages for this Socket
      * @return -1 if version < 3.0, or the maximum number of hops for multicast messages
      */
-    def getMulticastHops(): Long = if (versionBelow300) -1 else getLongSockopt(ZMQ_MCAST_LOOP)
+    def getMulticastHops(): Long = if (versionBelow300) getLongSockopt(ZMQ_MCAST_LOOP) else getIntSockopt(ZMQ_MULTICAST_HOPS)
 
     /**
      * Sets the Receive Timeout for this Socket, if the 0MQ version is at least 2.2
@@ -413,7 +420,7 @@ object ZMQ {
      * Retrieves the Event State for this Socket
      * @return -1 if version < 2.1, or a bit mask of ZMQ_POLLIN and ZMQ_POLLOUT depending if reading and/or writing is possible
      */
-    def getEvents(): Long = if (versionBelow210) -1 else getLongSockopt(ZMQ_EVENTS)
+    def getEvents(): Int = if (versionBelow210) -1 else getIntSockopt(ZMQ_EVENTS)
 
     /**
      * Sets the Linger period if the 0MQ version is at least 2.1 for this Socket
@@ -461,7 +468,10 @@ object ZMQ {
      * Sets the High Water Mark, if the 0MQ version is < 3.0, for this Socket
      * @param hwm in number of messages, 0 means no limit
      */
-    def setHWM(hwm: Long): Unit = if (versionBelow300) setLongSockopt(ZMQ_HWM, hwm)
+    def setHWM(hwm: Long): Unit = if (versionBelow300) setLongSockopt(ZMQ_HWM, hwm) else {
+      setRcvHWM(hwm.toInt)
+      setSndHWM(hwm.toInt)
+    }
 
     /**
      * Sets the Swap, if the 0MQ version is > 3.0, for this Socket
@@ -486,7 +496,7 @@ object ZMQ {
      * Sets the Data Rate for multicast transports for this Socket
      * @param rate in kbits per second
      */
-    def setRate(rate: Long): Unit = setLongSockopt(ZMQ_RATE, rate)
+    def setRate(rate: Long): Unit = if(versionBelow300) setLongSockopt(ZMQ_RATE, rate) else setIntSockopt(ZMQ_RATE, rate.toInt)
 
     /**
      * Sets the Recovery Interval for this Socket

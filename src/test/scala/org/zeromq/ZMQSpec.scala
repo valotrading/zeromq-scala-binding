@@ -31,7 +31,7 @@ class ZMQSpec extends WordSpec with MustMatchers {
       val context = ZMQ.context(1)
       val sub = context.socket(ZMQ.SUB)
       intercept[ZMQException] {
-        sub.connect("inproc://zmq-spec")
+        sub.connect("tcp://12.bad.ip.0")
       }
       sub.close()
     }
@@ -91,7 +91,7 @@ class ZMQSpec extends WordSpec with MustMatchers {
       rep.getReceiveTimeOut must equal(timeout)
       rep.close()
     }
-    "support setting the high water mark" in {
+    "backward support setting the high water mark" in {
       val context = ZMQ.context(1)
       val rep = context.socket(ZMQ.REP)
       val url = "inproc://zmq-spec"
@@ -99,8 +99,13 @@ class ZMQSpec extends WordSpec with MustMatchers {
       rep.setHWM(hwq)
 
       rep.bind(url)
-
-      rep.getHWM() must equal(hwq)
+      if(ZMQ.fullVersion >= makeVersion(3, 0, 0)) {
+        rep.getSndHWM() must equal(hwq)
+        rep.getRcvHWM() must equal(hwq)
+      }
+      else{
+        rep.getHWM() must equal(hwq)
+      }
       rep.close()
     }
     "support setting the rate" in {
