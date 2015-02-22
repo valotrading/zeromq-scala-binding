@@ -550,8 +550,12 @@ object ZMQ {
       if (zmq.zmq_msg_send(message, ptr, flags) < 0) {
         zmq.zmq_msg_close(message)
         raiseZMQException()
-      } else {
+      }
+      else if(zmq.zmq_errno != EAGAIN){
         if (zmq.zmq_msg_close(message) != 0) raiseZMQException() else false
+      }
+      else {
+        if (zmq.zmq_msg_close(message) != 0) raiseZMQException() else true
       }
     }
 
