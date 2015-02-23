@@ -26,7 +26,8 @@ import java.util.{ Arrays, HashSet => JHashSet }
 import java.lang.{ Long ⇒ JLong, Integer ⇒ JInteger }
 import scala.beans.BeanProperty
 import scala.annotation.tailrec
-import concurrent.duration.{Duration, FiniteDuration}
+import concurrent.duration._
+
 
 object ZeroMQ {
 
@@ -44,10 +45,17 @@ object ZeroMQ {
   val ZMQ_XSUB   = 10
 
   /** Send / receive options */
-  val ZMQ_NOBLOCK = 1
-  val ZMQ_SNDMORE = 2 
+  val ZMQ_DONTWAIT = 1
+  val ZMQ_SNDMORE = 2
+  /**
+   * @deprecated Replaced by ZMQ_DONTWAIT.
+   */
+  val ZMQ_NOBLOCK = ZMQ_DONTWAIT
 
   /** Socket options */
+  /**
+   * @deprecated Use ZMQ_SNDHWM & ZMQ_RCVHWM
+   */
   val ZMQ_HWM               = 1
   val ZMQ_SWAP              = 3
   val ZMQ_AFFINITY          = 4
@@ -102,6 +110,10 @@ object ZeroMQ {
   val ZMQ_POLLOUT = 2: Short
   val ZMQ_POLLERR = 4: Short
 
+  /** Context options */
+  val ZMQ_IO_THREADS =  1
+  val ZMQ_MAX_SOCKETS = 2
+
   def loadLibrary(): ZeroMQLibrary = Native.loadLibrary("zmq", classOf[ZeroMQLibrary]).asInstanceOf[ZeroMQLibrary]
 }
 
@@ -122,12 +134,13 @@ trait ZeroMQLibrary extends Library {
   def zmq_msg_move(dest: zmq_msg_t, src: zmq_msg_t): Int
   def zmq_msg_size(msg: zmq_msg_t): Int
   def zmq_poll(items: Array[zmq_pollitem_t], nitems: Int, timeout: NativeLong): Int
-  def zmq_recv(socket: Pointer, msg: zmq_msg_t, flags: Int): Int
-  def zmq_send(socket: Pointer, msg: zmq_msg_t, flags: Int): Int
+  def zmq_msg_recv(msg: zmq_msg_t, socket: Pointer, flags: Int): Int
+  def zmq_msg_send(msg: zmq_msg_t, socket: Pointer, flags: Int): Int
   def zmq_setsockopt(socket: Pointer, option_name: Int, option_value: Pointer, option_len: NativeLong): Int
   def zmq_socket(context: Pointer, socket_type: Int): Pointer
   def zmq_strerror(errnum: Int): String
   def zmq_term(context: Pointer): Int
+  def zmq_ctx_set(context: Pointer, option_name: Int, option_value: Int): Boolean
   def zmq_version(major: Array[Int], minor: Array[Int], patch: Array[Int]): Unit
 }
 
@@ -186,6 +199,9 @@ object ZMQ {
   final val STREAMER = ZeroMQ.ZMQ_STREAMER
   final val FORWARDER = ZeroMQ.ZMQ_FORWARDER
   final val QUEUE = ZeroMQ.ZMQ_QUEUE
+  final val XPUB = ZeroMQ.ZMQ_XPUB
+  final val XSUB = ZeroMQ.ZMQ_XSUB
+
 
   /**
    * Represents a 0MQ Context
@@ -217,6 +233,8 @@ object ZMQ {
      * @return a newly created Poller with the given size
      */
     def poller(size: Int): Poller = new Poller(this, size)
+
+    def setMaxSockets(maxSockets: Int): Boolean = zmq.zmq_ctx_set(ptr, ZeroMQ.ZMQ_MAX_SOCKETS, maxSockets)
   }
 
   private final val versionBelow210 = fullVersion < makeVersion(2, 1, 0)
@@ -248,7 +266,7 @@ object ZMQ {
      * Retrieves the Socket Type
      * @return -1 if version < 2.1, or the Socket Type
      */
-    def getType(): Int = if (versionBelow210) -1 else getLongSockopt(ZMQ_TYPE).asInstanceOf[Int]
+    def getType(): Int = if (versionBelow210) -1 else getIntSockopt(ZMQ_TYPE)
 
     /**
      * Retrieves the Linger value for this Socket
@@ -320,7 +338,7 @@ object ZMQ {
      * Retrieves the multicast data rate for this Socket
      * @return the multicast data rate
      */
-    def getRate(): Long = getLongSockopt(ZMQ_RATE)
+    def getRate(): Long = if(versionAtleast300) getIntSockopt(ZMQ_RATE) else getLongSockopt(ZMQ_RATE)
 
     /**
      * Retrieves the Recovery Interval for this Socket
@@ -338,13 +356,14 @@ object ZMQ {
      * Sets the maximum number of hops for multicast messages
      * @param mcast_hops the maximum number of hops
      */
-    def setMulticastHops(mcast_hops: Long): Unit = setLongSockopt(ZMQ_MCAST_LOOP, mcast_hops)
+    def setMulticastHops(mcast_hops: Long): Unit = if(versionAtleast300) setIntSockopt(ZMQ_MULTICAST_HOPS, mcast_hops.toInt)
+      else setLongSockopt(ZMQ_MCAST_LOOP, mcast_hops)
 
     /**
      * Retrieves the maximum number of hops for multicast messages for this Socket
      * @return -1 if version < 3.0, or the maximum number of hops for multicast messages
      */
-    def getMulticastHops(): Long = if (versionBelow300) -1 else getLongSockopt(ZMQ_MCAST_LOOP)
+    def getMulticastHops(): Long = if (versionBelow300) getLongSockopt(ZMQ_MCAST_LOOP) else getIntSockopt(ZMQ_MULTICAST_HOPS)
 
     /**
      * Sets the Receive Timeout for this Socket, if the 0MQ version is at least 2.2
@@ -404,7 +423,7 @@ object ZMQ {
      * Retrieves the Event State for this Socket
      * @return -1 if version < 2.1, or a bit mask of ZMQ_POLLIN and ZMQ_POLLOUT depending if reading and/or writing is possible
      */
-    def getEvents(): Long = if (versionBelow210) -1 else getLongSockopt(ZMQ_EVENTS)
+    def getEvents(): Int = if (versionBelow210) -1 else getIntSockopt(ZMQ_EVENTS)
 
     /**
      * Sets the Linger period if the 0MQ version is at least 2.1 for this Socket
@@ -452,7 +471,10 @@ object ZMQ {
      * Sets the High Water Mark, if the 0MQ version is < 3.0, for this Socket
      * @param hwm in number of messages, 0 means no limit
      */
-    def setHWM(hwm: Long): Unit = if (versionBelow300) setLongSockopt(ZMQ_HWM, hwm)
+    def setHWM(hwm: Long): Unit = if (versionBelow300) setLongSockopt(ZMQ_HWM, hwm) else {
+      setRcvHWM(hwm.toInt)
+      setSndHWM(hwm.toInt)
+    }
 
     /**
      * Sets the Swap, if the 0MQ version is > 3.0, for this Socket
@@ -477,7 +499,7 @@ object ZMQ {
      * Sets the Data Rate for multicast transports for this Socket
      * @param rate in kbits per second
      */
-    def setRate(rate: Long): Unit = setLongSockopt(ZMQ_RATE, rate)
+    def setRate(rate: Long): Unit = if(versionBelow300) setLongSockopt(ZMQ_RATE, rate) else setIntSockopt(ZMQ_RATE, rate.toInt)
 
     /**
      * Sets the Recovery Interval for this Socket
@@ -539,13 +561,15 @@ object ZMQ {
      */
     def send(msg: Array[Byte], flags: Int): Boolean = {
       val message = newZmqMessage(msg)
-      if (zmq.zmq_send(ptr, message, flags) == 0) {
-        if (zmq.zmq_msg_close(message) != 0) raiseZMQException() else true
-      } else if (zmq.zmq_errno == EAGAIN) {
+      if (zmq.zmq_msg_send(message, ptr, flags) < 0) {
+        zmq.zmq_msg_close(message)
+        raiseZMQException()
+      }
+      else if(zmq.zmq_errno != EAGAIN){
         if (zmq.zmq_msg_close(message) != 0) raiseZMQException() else false
-      } else {
-          zmq.zmq_msg_close(message)
-          raiseZMQException()
+      }
+      else {
+        if (zmq.zmq_msg_close(message) != 0) raiseZMQException() else true
       }
     }
 
@@ -556,14 +580,17 @@ object ZMQ {
      */
     def recv(flags: Int): Array[Byte] = {
       val message = newZmqMessage()
-      if (zmq.zmq_recv(ptr, message, flags) == 0) {
-          val dataByteArray = zmq.zmq_msg_data(message).getByteArray(0, zmq.zmq_msg_size(message))
-          if (zmq.zmq_msg_close(message) != 0) raiseZMQException() else dataByteArray
-      } else if (zmq.zmq_errno == EAGAIN) {
-        if (zmq.zmq_msg_close(message) != 0) raiseZMQException() else null
-      } else {
+      if (zmq.zmq_msg_recv(message, ptr, flags) < 0) {
+        if (zmq.zmq_errno == EAGAIN) {
+          if (zmq.zmq_msg_close(message) != 0) raiseZMQException() else null
+        }
+        else {
           zmq.zmq_msg_close(message)
           raiseZMQException()
+        }
+      } else {
+        val dataByteArray = zmq.zmq_msg_data(message).getByteArray(0, zmq.zmq_msg_size(message))
+        if (zmq.zmq_msg_close(message) != 0) raiseZMQException() else dataByteArray
       }
     }
 
@@ -637,6 +664,9 @@ object ZMQ {
    * @param size the initial size of the Poller, in number of Sockets
    */
   class Poller (context: ZMQ.Context, size: Int) {
+
+    def this(size: Int) = this(null, size)
+
     @BeanProperty var timeout: FiniteDuration = Duration(-1, "ms")
     private var nextEventIndex: Int = 0
     private var maxEventCount: Int = size
@@ -729,12 +759,15 @@ object ZMQ {
      */
     def poll(): Long = poll(this.timeout)
 
+
+    def poll(timeout: Long): Int = poll(1 milliseconds)
+
     /**
      * Polls the registered Sockets using a speficied timeout
      * @param timeout the timeout for the poll operation
      * @return how many items during the poll that yielded revents
      */
-    def poll(timeout: FiniteDuration): Long = {
+    def poll(timeout: FiniteDuration): Int = {
       Arrays.fill(revents, 0, nextEventIndex, 0: Short)
       curEventCount match {
         case 0 ⇒ 0
