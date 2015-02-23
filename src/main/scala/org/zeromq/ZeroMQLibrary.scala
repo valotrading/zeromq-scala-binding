@@ -199,6 +199,9 @@ object ZMQ {
   final val STREAMER = ZeroMQ.ZMQ_STREAMER
   final val FORWARDER = ZeroMQ.ZMQ_FORWARDER
   final val QUEUE = ZeroMQ.ZMQ_QUEUE
+  final val XPUB = ZeroMQ.ZMQ_XPUB
+  final val XSUB = ZeroMQ.ZMQ_XSUB
+
 
   /**
    * Represents a 0MQ Context
